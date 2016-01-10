@@ -16,9 +16,6 @@
 #include <cmath>
 
 using namespace std;
-// using namespace boost;
-// using namespace boost::tokenizer;
-// using namespace boost::program_options;
 
 
 
