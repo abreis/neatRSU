@@ -6,6 +6,7 @@
 #include <fstream>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/program_options.hpp>
 
 #include <string>
 #include <vector>
@@ -15,7 +16,9 @@
 #include <cmath>
 
 using namespace std;
-
+// using namespace boost;
+// using namespace boost::tokenizer;
+// using namespace boost::program_options;
 
 
 

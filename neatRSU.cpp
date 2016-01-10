@@ -9,6 +9,9 @@
 #define P_MUTATE_ADD_CONN	0.01
 #define P_MUTATE_ADD_NODE	0.01
 
+// Extern-able flags
+bool m_debug = false;
+
 int main(int argc, char *argv[])
 {
 	/* Overall structure:
@@ -19,10 +22,45 @@ int main(int argc, char *argv[])
 	 * - Test on both training data and test data, and output
 	 */
 
-	/* 01 Load training data */
- 	cout << "Loading training data on " << TRAIN_DATA << " into memory... " << flush;
+	/* Process command-line options
+	 * Using boost::program_options
+	 */
 
-	ifstream trainDataIn(TRAIN_DATA);
+	// Defaults
+	string m_traindata 	= "./node_week4_day23.csv";
+	string m_testdata 	= "./node_week3_day16.csv";
+
+	// List of command line options
+	boost::program_options::options_description cliOptDesc("Options");
+	cliOptDesc.add_options()
+		("train-data", boost::program_options::value<string>(), "location of training data CSV")
+		("test-data", boost::program_options::value<string>(), "location of test data CSV")
+	    ("debug", "enable debug mode")
+	    ("help", "give this help list")
+	;
+
+	// Parse options
+	boost::program_options::variables_map varMap;
+	store(parse_command_line(argc, argv, cliOptDesc), varMap);
+	notify(varMap);
+
+	if(argc==1) { cout << cliOptDesc; return 1; }
+
+	// Process options
+	if (varMap.count("debug")) 					m_debug		= true;
+	if (varMap.count("train-data"))				m_traindata	= varMap["train-data"].as<string>();
+	if (varMap.count("test-data"))				m_testdata	= varMap["test-data"].as<string>();
+
+	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
+
+
+
+
+
+	/* 01 Load training data */
+ 	cout << "Loading training data on " << m_traindata << " into memory... " << flush;
+
+	ifstream trainDataIn(m_traindata);
 	if (!trainDataIn.is_open()) return 1;
 
 	// Database to store training data
