@@ -16,7 +16,6 @@ enum NodeType { sensor, hidden, output };
 // Custom sigmoidal transfer function.
 double ActivationSigmoid (double input)
 {
-	// TODO verify working
 	/* The steepened sigmoid allows more fine tuning at extreme activations. 
 	 * It is optimized to be close to linear during its steepest ascent 
 	 * between activations −0.5 and 0.5.

@@ -21,10 +21,10 @@
 	method of adding nodes was chosen in order to minimize the 
 	initial effect of the mutation.
 */
-// Strand MutateAddNode(Strand origin);
+// Genome MutateAddNode(Genome origin);
 
-// Crossover two strands to generate offspring.
-// Strand MutateCrossover(Strand first, Strand second);
+// Crossover two genomes to generate offspring.
+// Genome MutateCrossover(Genome first, Genome second);
 
 
 
@@ -32,10 +32,10 @@
 /* Classes and Structs
    ------------------- */
 
-class Strand
+class Genome
 {
-	// A strand (or a genotype) has a set of nodes and a set of connections.
-	// Include routines to manipulate the strand and verify its structure.
+	// A genome has a set of nodes and a set of connections.
+	// Include routines to manipulate the genome and verify its structure.
 
 public:
 	bool Verify(void);
