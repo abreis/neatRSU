@@ -28,17 +28,21 @@ int main(int argc, char *argv[])
 	// Defaults
 	string 	m_traindata		= "";
 	string 	m_testdata 		= "";
-	// float 	m_p_mutate_addweight	= 0.50;
-	// float 	m_p_mutate_addconn		= 0.01;
-	// float 	m_p_mutate_addnode		= 0.01;
+	int 	m_seed			= 0;
+
+	// Non-CLI-configurable options
+	float 	m_p_mutate_addweight	= 0.50;
+	float 	m_p_mutate_addconn		= 0.01;
+	float 	m_p_mutate_addnode		= 0.01;
 
 	// List of command line options
 	boost::program_options::options_description cliOptDesc("Options");
 	cliOptDesc.add_options()
-		("train-data", boost::program_options::value<string>(), "location of training data CSV")
-		("test-data", boost::program_options::value<string>(), "location of test data CSV")
-	    ("debug", "enable debug mode")
-	    ("help", "give this help list")
+		("train-data", 	boost::program_options::value<string>(), 	"location of training data CSV")
+		("test-data", 	boost::program_options::value<string>(), 	"location of test data CSV")
+		("seed", 		boost::program_options::value<int>(), 		"random number generator seed")
+	    ("debug", 													"enable debug mode")
+	    ("help", 													"give this help list")
 	;
 
 	// Parse options
@@ -52,6 +56,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("debug")) 					m_debug		= true;
 	if (varMap.count("train-data"))				m_traindata	= varMap["train-data"].as<string>();
 	if (varMap.count("test-data"))				m_testdata	= varMap["test-data"].as<string>();
+	if (varMap.count("seed"))					m_seed		= varMap["seed"].as<int>();
 	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
 
 
@@ -61,13 +66,13 @@ int main(int argc, char *argv[])
 
 
 	if(m_traindata.empty())
-		{ cout << "ERROR: Please specify a file with training data." << endl; return 1; }
+		{ cout << "ERROR\tPlease specify a file with training data." << endl; return 1; }
 	else
 	{
-	 	cout << "Loading training data on " << m_traindata << " into memory... " << flush;
+	 	cout << "INFO\tLoading training data on " << m_traindata << " into memory... " << flush;
 
 		ifstream trainDataIn( m_traindata.c_str() );
-		if (!trainDataIn.is_open()) { cout << "\nERROR: Failed to open file." << endl; return 1; }
+		if (!trainDataIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; return 1; }
 
 		// Database to store training data
 		vector<DataEntry> TrainingDB;
@@ -86,7 +91,7 @@ int main(int argc, char *argv[])
 			TrainingDB.push_back(entry);
 		}
 		cout << "done." << endl;
-		cout << "Loaded " << TrainingDB.size() << " entries into memory." << endl;
+		cout << "INFO\tLoaded " << TrainingDB.size() << " entries into memory." << endl;
 	}
 
 	/***
@@ -96,14 +101,14 @@ int main(int argc, char *argv[])
 
 	// Check if a test data file was specified in the options.
 	if(m_testdata.empty())
-		{ cout << "No test data provided, evaluation to be performed on training data." << endl; }
+		{ cout << "INFO\tNo test data provided, evaluation to be performed on training data." << endl; }
 	else
 	{
 		// Load data
-	 	cout << "Loading test data on " << m_testdata << " into memory... " << flush;
+	 	cout << "INFO\tLoading test data on " << m_testdata << " into memory... " << flush;
 
 		ifstream testDataIn( m_testdata.c_str() );
-		if (!testDataIn.is_open()) { cout << "\nERROR: Failed to open file." << endl; return 1; }
+		if (!testDataIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; return 1; }
 
 		// Database to store training data
 		vector<DataEntry> TestDB;
@@ -122,10 +127,30 @@ int main(int argc, char *argv[])
 			TestDB.push_back(entry);
 		}
 		cout << "done." << endl;
-		cout << "Loaded " << TestDB.size() << " entries into memory." << endl;
+		cout << "INFO\tLoaded " << TestDB.size() << " entries into memory." << endl;
 
 	}
 
+
+	/***
+	 *** A3 Initialize global Random Number Generators
+	 ***/
+
+	cout << "INFO\tInitializing random number generators with seed " << m_seed << ".\n";
+
+	// We use boost::random and mt19937 as a source of randomness.
+	// The seed can be specified thorugh CLI
+	boost::random::mt19937 rng(m_seed);
+
+	// Boolean (bernoulli) distributions
+	boost::random::bernoulli_distribution<> rng_5050		( 0.5 );
+	boost::random::bernoulli_distribution<> rng_mutweight	( m_p_mutate_addweight );
+	boost::random::bernoulli_distribution<> rng_addconn		( m_p_mutate_addconn );
+	boost::random::bernoulli_distribution<> rng_addnode		( m_p_mutate_addnode );
+
+	// Source of Gaussian randomness (for weight mutations)
+	// Inits: (mean,stdev)
+	boost::random::normal_distribution<> rng_gauss			( 0.0, 1.0 );
 
 	/***
 	 *** B0 Setup neural network
@@ -142,3 +167,5 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+
