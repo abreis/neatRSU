@@ -1,5 +1,12 @@
 #include "genetic.h"
 
+// Global innovation number
+uint16_t g_innovNumber = 0;
+
+// List of innovations (pair(fromNode,toNode),innov#)
+map<pair<uint16_t,uint16_t>,uint16_t> g_innovations; 
+
+
 Genome::Genome(uint16_t n_inputs)
 {
 	// Add an output node. Output node ID will always be #inputs+1
@@ -19,6 +26,28 @@ Genome::Genome(uint16_t n_inputs)
 }
 
 
+/* Mutations
+ */
+
+
+// Add a single new connection gene with a specified weight.
+void MutateAddConnection(double weight)
+{
+
+}
+
+// Split a connection gene into two and add a node in the middle.
+/* An old connection is disabled and two new connections are added to the genome. 
+ * The new connection leading into the new node receives a weight of 1, and 
+ * the new connection leading out receives the same weight as the old connection. 
+ * This method of adding nodes minimizes the initial effect of the mutation.
+ */
+void MutateAddNode(void)
+{
+
+}
+
+
 bool Genome::Verify(void)
 {	
 	// Every connection must point to a valid node ID
@@ -26,6 +55,10 @@ bool Genome::Verify(void)
 
 	return true; 
 }
+
+
+/* Auxiliary
+ */
 
 
 void Genome::Print()
@@ -119,11 +152,13 @@ void Genome::PrintToGV(Genome gen, string filename)
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
-		gvout 	<< '\t' << iterConn->second.from_node << " -> " << iterConn->second.to_node
-				<< " [ label = \""
-				<< fixed << setprecision(1) << iterConn->second.weight
-				<< "\" ];\n";
+		if(iterConn->second.enabled)
+			gvout 	<< '\t' << iterConn->second.from_node << " -> " << iterConn->second.to_node
+					<< " [ label = \""
+					<< fixed << setprecision(1) << iterConn->second.weight
+					<< "\" ];\n";
 
-
+	// Close file
 	gvout << "}\n";
+	gvout.close();
 }

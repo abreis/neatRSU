@@ -1,9 +1,13 @@
 #ifndef NEATRSU_H_
 #define NEATRSU_H_
 
-#include <iomanip>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
+
+#include <string>
+#include <vector>
+
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
@@ -12,15 +16,7 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/bernoulli_distribution.hpp>
 
-#include <string>
-#include <vector>
-
 using namespace std;
-
-#include "neural.h"
-#include "genetic.h"
-
-
 
 
 /* Definitions

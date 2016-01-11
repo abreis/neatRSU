@@ -1,7 +1,9 @@
 #include "neatRSU.h"
+#include "neural.h"
+#include "genetic.h"
 
-// Extern-able flags
 bool m_debug = false;
+
 
 int main(int argc, char *argv[])
 {
@@ -88,6 +90,8 @@ int main(int argc, char *argv[])
 			DataEntry entry(fields);
 			TrainingDB.push_back(entry);
 		}
+
+		trainDataIn.close();
 		cout << "done." << endl;
 		cout << "INFO\tLoaded " << TrainingDB.size() << " training entries into memory." << endl;
 	}
@@ -125,6 +129,8 @@ int main(int argc, char *argv[])
 			DataEntry entry(fields);
 			TestDB.push_back(entry);
 		}
+
+		testDataIn.close();
 		cout << "done." << endl;
 		cout << "INFO\tLoaded " << TestDB.size() << " testing entries into memory." << endl;
 

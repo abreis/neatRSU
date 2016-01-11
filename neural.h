@@ -1,8 +1,9 @@
 #ifndef NEURAL_H_
 #define NEURAL_H_
 
-#include "neatRSU.h"
 #include <cmath>
+
+using namespace std;
 
 
 /* Definitions

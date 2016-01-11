@@ -1,6 +1,5 @@
 #include "neural.h"
 
-
 double ActivationSigmoid (double input)
 {
 	/* The steepened sigmoid allows more fine tuning at extreme activations. 

@@ -3,7 +3,7 @@ TODO
 
 v boost::program_options
 v random number generators
-- PrintToGV make disabled connections dashed
+v PrintToGV ignore disabled connections
 
 Neural
 ------

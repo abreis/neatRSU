@@ -1,14 +1,16 @@
 #ifndef GENETIC_H_
 #define GENETIC_H_
 
-#include "neatRSU.h"
 #include "neural.h"
+#include <iostream>
+#include <iomanip>
+#include <fstream>
 #include <map>
 
+using namespace std;
 
 /* Definitions
    ----------- */
-
 
 
 
@@ -78,8 +80,19 @@ public:
 	// Set up a new genome with a specific number of inputs.
 	Genome(uint16_t n_inputs);
 
-	// Verify the integrity of the Genome. 
-	// Returns false if there were inconsistencies.
+
+	/* Mutations
+	 */
+	// Add a single new connection gene with a specified weight.
+	void MutateAddConnection(double weight);
+
+	// Split a connection gene into two and add a node in the middle.
+	void MutateAddNode(void);
+
+
+	/* Auxiliary
+	 */
+	// Verify the integrity of the Genome. Returns false if there were inconsistencies.
 	bool Verify(void);
 
 	// Print the contents of this Genome
