@@ -1,6 +1,4 @@
 #include "neatRSU.h"
-#include "neural.h"
-#include "genetic.h"
 
 // Extern-able flags
 bool m_debug = false;
@@ -91,8 +89,9 @@ int main(int argc, char *argv[])
 			TrainingDB.push_back(entry);
 		}
 		cout << "done." << endl;
-		cout << "INFO\tLoaded " << TrainingDB.size() << " entries into memory." << endl;
+		cout << "INFO\tLoaded " << TrainingDB.size() << " training entries into memory." << endl;
 	}
+
 
 	/***
 	 *** A2 Load test data
@@ -101,7 +100,7 @@ int main(int argc, char *argv[])
 
 	// Check if a test data file was specified in the options.
 	if(m_testdata.empty())
-		{ cout << "INFO\tNo test data provided, evaluation to be performed on training data." << endl; }
+		{ cout << "INFO\tNo test data provided, evaluation to be performed on training data only." << endl; }
 	else
 	{
 		// Load data
@@ -127,7 +126,7 @@ int main(int argc, char *argv[])
 			TestDB.push_back(entry);
 		}
 		cout << "done." << endl;
-		cout << "INFO\tLoaded " << TestDB.size() << " entries into memory." << endl;
+		cout << "INFO\tLoaded " << TestDB.size() << " testing entries into memory." << endl;
 
 	}
 
@@ -153,15 +152,21 @@ int main(int argc, char *argv[])
 	boost::random::normal_distribution<> rng_gauss			( 0.0, 1.0 );
 
 	// To draw random integers (e.g. to randomly select a node), use:
-	//  boost::random::uniform_int_distribution<> dist(min, max);
+	// boost::random::uniform_int_distribution<> dist(min, max);
 
 
 	/***
 	 *** B0 Setup neural network
 	 ***/
 
-	//
-
+	// Test code
+	string outfile = "testgv.gv";
+	Genome gentest(6);
+	gentest.connections[5].enabled=false;
+	gentest.nodes[8] = NodeGene(8, NodeType::HIDDEN);
+	gentest.connections[7] = ConnectionGene(1, 8, 7);
+	gentest.connections[8] = ConnectionGene(8, 7, 8);
+	gentest.PrintToGV(gentest, outfile);
 
 	/***
 	 *** Z0 Wrap up

@@ -53,15 +53,15 @@ public:
 class ConnectionGene
 {
 public:
-	uint16_t	in_node;
-	uint16_t	out_node;
+	uint16_t	from_node;
+	uint16_t	to_node;
 	double		weight = 1.0;
 	bool		enabled = true;
 	uint16_t	innovation;
 
 	ConnectionGene(){};
 	ConnectionGene(uint16_t in, uint16_t out, uint16_t innov)
-		{ in_node = in; out_node = out, innovation = innov; }
+		{ from_node = in; to_node = out, innovation = innov; }
 };
 
 
@@ -84,6 +84,9 @@ public:
 
 	// Print the contents of this Genome
 	void Print();
+
+	// Print the contents of this Genome as Graphviz language to a file
+	void PrintToGV(Genome gen, string filename);
 };
 
 

@@ -15,8 +15,11 @@
 #include <string>
 #include <vector>
 
-
 using namespace std;
+
+#include "neural.h"
+#include "genetic.h"
+
 
 
 
@@ -35,8 +38,9 @@ using namespace std;
 
 // An entry in the database.
 // '<' overloaded w.r.t. relative_time
-struct DataEntry
+class DataEntry
 {
+public:
 	uint16_t	node_id;
 	uint32_t	relative_time;
 	float		latitude;
@@ -61,7 +65,6 @@ struct DataEntry
     bool operator < (const DataEntry& entry) const
         { return (relative_time < entry.relative_time); }
 };
-
 
 
 #endif /* NEATRSU_H_ */

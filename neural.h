@@ -8,7 +8,7 @@
 /* Definitions
    ----------- */
 
-enum NodeType { sensor, hidden, output };
+enum NodeType { SENSOR, HIDDEN, OUTPUT };
 
 
 
