@@ -5,7 +5,7 @@ CC=g++
 CXXFLAGS=-c -O2 -std=c++11 -Wall --pedantic
 LDFLAGS=-O2
 
-SOURCES=neatRSU.cpp
+SOURCES=neatRSU.cpp genetic.cpp neural.cpp
 EXECUTABLE=neatRSU
 EXTRALIBS=-lboost_program_options
 

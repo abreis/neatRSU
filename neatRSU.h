@@ -8,16 +8,13 @@
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/random/mersenne_twister.hpp>
-#include <boost/random/discrete_distribution.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/bernoulli_distribution.hpp>
 
 #include <string>
 #include <vector>
-#include <array>
-#include <set>
 
-#include <cmath>
 
 using namespace std;
 

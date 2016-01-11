@@ -152,6 +152,10 @@ int main(int argc, char *argv[])
 	// Inits: (mean,stdev)
 	boost::random::normal_distribution<> rng_gauss			( 0.0, 1.0 );
 
+	// To draw random integers (e.g. to randomly select a node), use:
+	//  boost::random::uniform_int_distribution<> dist(min, max);
+
+
 	/***
 	 *** B0 Setup neural network
 	 ***/
