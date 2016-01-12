@@ -169,10 +169,10 @@ int main(int argc, char *argv[])
 	// Test code
 	string outfile = "testgv.gv";
 	Genome gentest(6);
-	gentest.connections[5].enabled=false;
+	gentest.connections[make_pair(1,5)].enabled=false;
 	gentest.nodes[8] = NodeGene(8, NodeType::HIDDEN);
-	gentest.connections[7] = ConnectionGene(1, 8, 7);
-	gentest.connections[8] = ConnectionGene(8, 7, 8);
+	gentest.connections[make_pair(1,8)] = ConnectionGene(1, 8, 7);
+	gentest.connections[make_pair(8,7)] = ConnectionGene(8, 7, 8);
 	gentest.PrintToGV(gentest, outfile);
 
 

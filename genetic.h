@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <fstream>
 #include <map>
+#include <vector>
 
 using namespace std;
 
@@ -64,8 +65,8 @@ class Genome
 public:
 	// List of nodes. Each nodeID is unique, so we use an std::map
 	map<uint16_t, NodeGene> nodes;
-	// List of connections. Each connection's innovation must be unique
-	map<uint16_t, ConnectionGene> connections;
+	// List of connections. We use the from->to nodeIDs as keys
+	map<pair<uint16_t,uint16_t>, ConnectionGene> connections;
 
 	// The current fitness of this genome
 	uint32_t fitness = 0;

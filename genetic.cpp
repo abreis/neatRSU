@@ -21,7 +21,7 @@ Genome::Genome(uint16_t n_inputs)
 		n++)
 	{
 		nodes[n] = NodeGene(n, NodeType::SENSOR);
-		connections[n] = ConnectionGene(n, n_inputs+1, n); // Initial innovation matches sensor node ID 
+		connections[make_pair(n,n_inputs+1)] = ConnectionGene(n, n_inputs+1, n); // Initial innovation matches sensor node ID 
 	}
 }
 
@@ -83,7 +83,7 @@ void Genome::Print()
 			<< "Path   Enable   Weight          Innov" << '\n'
 			<< "-------------------------------------" << '\n';
 
-	for(map<uint16_t, ConnectionGene>::const_iterator 
+	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
@@ -148,7 +148,7 @@ void Genome::PrintToGV(Genome gen, string filename)
 	gvout << ";\n";
 
 	// Output connections
-	for(map<uint16_t, ConnectionGene>::const_iterator 
+	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)

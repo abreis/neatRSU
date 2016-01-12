@@ -23,6 +23,8 @@ double ActivationSigmoid (double input);
 // Output transfer function.
 double ActivationOutput (double input);
 
+// Placeholder for r
+void Activate(void);
 
 // Feed data into a neural network and evaluate the fitness of the output.
 // uint32_t EvaluateFitness(vector<DataEntry> data, -neural network-);
