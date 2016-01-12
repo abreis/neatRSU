@@ -4,12 +4,24 @@
 // Debug flag
 bool gm_debug = false;
 
-/* Number of inputs in the system
+/* Number of inputs in the system and node names
  * g_inputs+1 -> output node
  * g_inputs+2 -> bias node
  * g_inputs+3 -> first hidden node
  */ 
-uint16_t g_inputs = 0;
+const uint16_t g_inputs = 6;
+map<uint16_t,string> g_nodeNames = 
+{
+	{1, "id"},
+	{2, "time"},
+	{3, "lat"},
+	{4, "lon"},
+	{5, "speed"},
+	{6, "bearing"},
+	{7, "output"},
+	{8, "bias"}
+};
+
 
 int main(int argc, char *argv[])
 {
@@ -173,17 +185,7 @@ int main(int argc, char *argv[])
 	 *** B0 Setup neural network
 	 ***/
 
-	// Set global number of inputs and input names
-	g_inputs = 6;
-	map<uint16_t,string> g_inputNames = 
-		{
-			{1, "id"},
-			{2, "time"},
-			{3, "lat"},
-			{4, "lon"},
-			{5, "speed"},
-			{6, "heading"}
-		};
+	/* Set global number of inputs and input names at the start of the file */
 
 	// Create a population
 	Population population;
@@ -196,6 +198,15 @@ int main(int argc, char *argv[])
 	firstSpecies.genomes.push_back(firstGenome);
 	population.species.push_back(firstSpecies);
 
+	// TODO test
+	string outfile = "testgv.gv";
+	Genome gentest(g_inputs);
+	gentest.connections[make_pair(1,g_inputs+1)].enabled=false;
+	gentest.nodes[g_inputs+3] = NodeGene(g_inputs, NodeType::HIDDEN);
+	gentest.connections[make_pair(1,g_inputs+3)] = ConnectionGene(1, 6+3, g_inputs+1);
+	gentest.connections[make_pair(g_inputs+3,g_inputs+1)] = ConnectionGene(g_inputs+3, g_inputs+1, g_inputs+2);
+	gentest.connections[make_pair(g_inputs+2,g_inputs+3)] = ConnectionGene(g_inputs+2, g_inputs+3, g_inputs+3);
+	gentest.PrintToGV(gentest, outfile);
 
 	/***
 	 *** C0 Loop evolution until criteria match

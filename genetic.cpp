@@ -6,9 +6,9 @@ uint16_t g_innovNumber = 0;
 // List of innovations (pair(fromNode,toNode),innov#)
 map<pair<uint16_t,uint16_t>,uint16_t> g_innovations; 
 
-extern uint16_t g_inputs;
 
-
+/* Functions
+ */
 
 
 double ActivationSigmoid (double input)
@@ -35,8 +35,11 @@ double ActivationOutput (double input)
 Genome::Genome(uint16_t n_inputs)
 {
 	// Add an output node. Output node ID will always be #inputs+1
-	// NodeGene test(n_inputs+1, NodeType::output); 
 	nodes[n_inputs+1] = NodeGene(n_inputs+1, NodeType::OUTPUT);
+
+	// Add a bias node. Bias node ID will always be #inputs+2
+	// Constructor ensures adequate node value = 1 for type BIAS
+	nodes[n_inputs+2] = NodeGene(n_inputs+2, NodeType::BIAS);	
 
 	// Fill the NodeGene vector with input nodes, and fill the ConnectionGene
 	// vector with a connection from each node to the output.
@@ -166,38 +169,35 @@ void Genome::PrintToGV(Genome gen, string filename)
 	if (!gvout.is_open()) { cout << "\nERROR\tFailed to open file for writing." << endl; exit(1); }
 
 	// Output standard header
-	gvout << "digraph finite_state_machine {\n\trankdir=LR;\n\tsize=\"8,5\"\n";
+	gvout << "digraph finite_state_machine {\n\trankdir=LR;\n";
 
 	// Input node cluster
 	gvout 	<< "\tsubgraph cluster_0 {\n"
 			<< "\t\tlabel = \"inputs\";\n"
-			<< "\t\tnode [shape=circle,style=filled,color=lightgrey];\n"
+			<< "\t\tnode [shape=circle,style=filled,color=lightgrey,fixedsize=true,width=1];\n"
 			<< "\t\t";
 	for(map<uint16_t, NodeGene>::const_iterator 
 		iterNode = nodes.begin();
 		iterNode != nodes.end();
 		iterNode++)
 		if(iterNode->second.type==NodeType::SENSOR)
-			gvout << ' ' << iterNode->first;
+			gvout << ' ' << g_nodeNames[iterNode->first];
 	gvout << ";\n\t}\n";
 
-	// Output node cluster
+	// Output node cluster (assumes single node at g_inputs+1)
 	gvout 	<< "\tsubgraph cluster_1 {\n"
-			<< "\t\tlabel = \"output\";\n"
+			<< "\t\tlabel = \"\";\n"
 			<< "\t\tstyle = filled;\n"
 			<< "\t\tcolor = lightgrey;\n"
 			<< "\t\tnode [shape=circle,style=filled,color=white];\n"
-			<< "\t\t";
-	for(map<uint16_t, NodeGene>::const_iterator 
-		iterNode = nodes.begin();
-		iterNode != nodes.end();
-		iterNode++)
-		if(iterNode->second.type==NodeType::OUTPUT)
-			gvout << ' ' << iterNode->first;
-	gvout << ";\n\t}\n";
+			<< "\t\t" << ' ' << g_nodeNames[g_inputs+1] << ";\n\t}\n";
+
+	// Bias node
+	gvout 	<< "\tnode [shape=circle,style=filled,color=dimgrey,fontcolor=white];"
+			<< ' ' << g_nodeNames[g_inputs+2] << ";\n";
 
 	// Hidden nodes
-	gvout << "\tnode [shape=circle];";
+	gvout << "\tnode [shape=circle,style=filled,fillcolor=white,fontcolor=black];";
 	for(map<uint16_t, NodeGene>::const_iterator 
 		iterNode = nodes.begin();
 		iterNode != nodes.end();
@@ -212,7 +212,10 @@ void Genome::PrintToGV(Genome gen, string filename)
 		iterConn != connections.end();
 		iterConn++)
 		if(iterConn->second.enabled)
-			gvout 	<< '\t' << iterConn->second.from_node << " -> " << iterConn->second.to_node
+			gvout 	<< '\t' 
+					<< ( (iterConn->second.from_node <= g_nodeNames.size())?g_nodeNames[iterConn->second.from_node]:to_string(iterConn->second.from_node) )
+					<< " -> " 
+					<< ( (iterConn->second.to_node <= g_nodeNames.size())?g_nodeNames[iterConn->second.to_node]:to_string(iterConn->second.to_node) )
 					<< " [ label = \""
 					<< fixed << setprecision(1) << iterConn->second.weight
 					<< "\" ];\n";

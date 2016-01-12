@@ -8,6 +8,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 
 #include "neatRSU.h"
 
@@ -16,8 +17,6 @@ using namespace std;
 /* Definitions
    ----------- */
 enum NodeType { SENSOR, HIDDEN, OUTPUT, BIAS };
-
-
 
 
 /* Functions
@@ -53,7 +52,10 @@ public:
 
 	NodeGene(){};
 	NodeGene(uint16_t iid, NodeType ttype) 
-		{ id = iid; type = ttype; }
+		{ 
+			id = iid; type = ttype; 
+			if(type==NodeType::BIAS) {valueNow=1; valueLast=1;}
+		}
 };
 
 
