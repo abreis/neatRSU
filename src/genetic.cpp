@@ -35,11 +35,11 @@ double ActivationOutput (double input)
 Genome::Genome(uint16_t n_inputs)
 {
 	// Add an output node. Output node ID will always be #inputs+1
-	nodes[n_inputs+1] = NodeGene(n_inputs+1, NodeType::OUTPUT);
+	nodes[d_outputnode] = NodeGene(d_outputnode, NodeType::OUTPUT);
 
 	// Add a bias node. Bias node ID will always be #inputs+2
 	// Constructor ensures adequate node value = 1 for type BIAS
-	nodes[n_inputs+2] = NodeGene(n_inputs+2, NodeType::BIAS);	
+	nodes[d_biasnode] = NodeGene(d_biasnode, NodeType::BIAS);	
 
 	// Fill the NodeGene vector with input nodes, and fill the ConnectionGene
 	// vector with a connection from each node to the output.
@@ -49,22 +49,44 @@ Genome::Genome(uint16_t n_inputs)
 		n++)
 	{
 		nodes[n] = NodeGene(n, NodeType::SENSOR);
-		connections[make_pair(n,n_inputs+1)] = ConnectionGene(n, n_inputs+1, n); // Initial innovation matches sensor node ID 
+		connections[make_pair(n,d_outputnode)] = ConnectionGene(n, d_outputnode, n); // Initial innovation matches sensor node ID 
 	}
 }
 
 
 double Genome::Activate(DataEntry data)
 {
-	// Move all valueNow to valueLast
+	// Put the DataEntry at the inputs
+	nodes[1].valueNow=data.node_id;
+	nodes[2].valueNow=data.relative_time;
+	nodes[3].valueNow=data.latitude;
+	nodes[4].valueNow=data.longitude;
+	nodes[5].valueNow=data.speed;
+	nodes[6].valueNow=data.heading;
+
+	// Move all valueNow to valueLast, reset valueNow
 	for(map<uint16_t, NodeGene>::iterator 
 		iterNode = nodes.begin();
 		iterNode != nodes.end();
 		iterNode++)
+	{
 		iterNode->second.valueLast = iterNode->second.valueNow;
+		iterNode->second.valueNow = 0;
+	}
 
-	// TODO
-	return nodes[g_inputs+1].valueNow;
+	// Run through each connection
+	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+		iterConn = connections.begin();
+		iterConn != connections.end();
+		iterConn++)
+	{
+		// Add the connection's effect to the destination node's 'valueNow'
+		nodes[iterConn->second.to_node].valueNow += 
+			nodes[iterConn->second.from_node].valueLast * iterConn->second.weight;
+	}
+
+	// Return the value at the output node
+	return nodes[d_outputnode].valueNow;
 }
 
 
@@ -185,17 +207,17 @@ void Genome::PrintToGV(Genome gen, string filename)
 			gvout << ' ' << g_nodeNames[iterNode->first];
 	gvout << ";\n\t}\n";
 
-	// Output node cluster (assumes single node at g_inputs+1)
+	// Output node cluster (assumes single node at d_outputnode)
 	gvout 	<< "\tsubgraph cluster_1 {\n"
 			<< "\t\tlabel = \"\";\n"
 			<< "\t\tstyle = filled;\n"
 			<< "\t\tcolor = lightgrey;\n"
 			<< "\t\tnode [shape=circle,style=filled,color=white];\n"
-			<< "\t\t" << ' ' << g_nodeNames[g_inputs+1] << ";\n\t}\n";
+			<< "\t\t" << ' ' << g_nodeNames[d_outputnode] << ";\n\t}\n";
 
 	// Bias node
 	gvout 	<< "\tnode [shape=circle,style=filled,color=dimgrey,fontcolor=white];"
-			<< ' ' << g_nodeNames[g_inputs+2] << ";\n";
+			<< ' ' << g_nodeNames[d_biasnode] << ";\n";
 
 	// Hidden nodes
 	gvout << "\tnode [shape=circle,style=filled,fillcolor=white,fontcolor=black];";

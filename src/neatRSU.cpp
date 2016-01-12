@@ -202,10 +202,10 @@ int main(int argc, char *argv[])
 	string outfile = "testgv.gv";
 	Genome gentest(g_inputs);
 	gentest.connections[make_pair(1,g_inputs+1)].enabled=false;
-	gentest.nodes[g_inputs+3] = NodeGene(g_inputs, NodeType::HIDDEN);
-	gentest.connections[make_pair(1,g_inputs+3)] = ConnectionGene(1, 6+3, g_inputs+1);
-	gentest.connections[make_pair(g_inputs+3,g_inputs+1)] = ConnectionGene(g_inputs+3, g_inputs+1, g_inputs+2);
-	gentest.connections[make_pair(g_inputs+2,g_inputs+3)] = ConnectionGene(g_inputs+2, g_inputs+3, g_inputs+3);
+	gentest.nodes[d_firsthidnode] = NodeGene(g_inputs, NodeType::HIDDEN);
+	gentest.connections[make_pair(1,d_firsthidnode)] = ConnectionGene(1, d_firsthidnode, g_inputs+1);
+	gentest.connections[make_pair(d_firsthidnode,d_outputnode)] = ConnectionGene(d_firsthidnode, d_outputnode, g_inputs+2);
+	gentest.connections[make_pair(d_biasnode,d_firsthidnode)] = ConnectionGene(d_biasnode, d_firsthidnode, g_inputs+3);
 	gentest.PrintToGV(gentest, outfile);
 
 	/***
