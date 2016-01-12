@@ -83,6 +83,7 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 	{
 		double prediction = this->Activate(*iterDB);
 		fitness += pow(prediction-iterDB->contact_time, 2);
+		if(store) iterDB->prediction=prediction;
 	}
 	return fitness;
 }

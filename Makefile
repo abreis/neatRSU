@@ -5,11 +5,14 @@ CC=g++
 CXXFLAGS=-c -O2 -std=c++11 -Wall --pedantic
 LDFLAGS=-O2
 
-SOURCES=neatRSU.cpp genetic.cpp
+INCLUDEDIR=include
+SRCDIR=src
+
+SOURCES=$(SRCDIR)/neatRSU.cpp $(SRCDIR)/genetic.cpp
 EXECUTABLE=neatRSU
 EXTRALIBS=-lboost_program_options
 
-INCLUDEDIRS=-I/usr/local/include
+INCLUDEDIRS=-I$(INCLUDEDIR) -I/usr/local/include
 LIBDIRS=-L/usr/local/lib
 
 OBJECTS=$(SOURCES:.cpp=.o)
