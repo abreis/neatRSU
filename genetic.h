@@ -12,24 +12,14 @@ using namespace std;
 /* Definitions
    ----------- */
 
-
+/*
+A Population has Species
+Species have Genomes
+*/
 
 
 /* Functions
    --------- */
-/* 	In the add node mutation, an existing connection is split 
-	and the new node placed where the old connection used to be. 
-	The old connection is disabled and two new connections are 
-	added to the genome. The new connection leading into the new 
-	node receives a weight of 1, and the new connection leading 
-	out receives the same weight as the old connection. This 
-	method of adding nodes was chosen in order to minimize the 
-	initial effect of the mutation.
-*/
-// Genome MutateAddNode(Genome origin);
-
-// Crossover two genomes to generate offspring.
-// Genome MutateCrossover(Genome first, Genome second);
 
 
 
@@ -77,6 +67,9 @@ public:
 	// List of connections. Each connection's innovation must be unique
 	map<uint16_t, ConnectionGene> connections;
 
+	// The current fitness of this genome
+	uint32_t fitness = 0;
+
 	// Set up a new genome with a specific number of inputs.
 	Genome(uint16_t n_inputs);
 
@@ -102,5 +95,21 @@ public:
 	void PrintToGV(Genome gen, string filename);
 };
 
+// A species, a collection of genomes.
+class Species
+{
+public:
+	vector<Genome> genomes;
+};
+
+// A population.
+class Population
+{
+public:
+	vector<Species> species;
+
+	// How many species we aim to get
+	uint16_t targetNumber=10;
+};
 
 #endif /* GENETIC_H_ */

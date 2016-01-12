@@ -4,9 +4,12 @@ TODO
 v boost::program_options
 v random number generators
 v PrintToGV ignore disabled connections
+- Implement no recurrency at first
 
 Neural
 ------
+- Implement BIAS node type. Bias node is a disconnected input, and NEAT should add connections as needed.
+-- Not all nodes need a Bias. 
 - Apply a single data entry through a Genome and get the output
 - Run a DB through a genome and fill its predicted time-to-contact field
 -- This might be better optimized by evaluating the goodness-of-fit as the predictions are computed,

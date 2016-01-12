@@ -9,7 +9,7 @@ using namespace std;
 /* Definitions
    ----------- */
 
-enum NodeType { SENSOR, HIDDEN, OUTPUT };
+enum NodeType { SENSOR, HIDDEN, OUTPUT, BIAS };
 
 
 

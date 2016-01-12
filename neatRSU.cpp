@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
 	float 	m_p_mutate_addweight	= 0.50;
 	float 	m_p_mutate_addconn		= 0.01;
 	float 	m_p_mutate_addnode		= 0.01;
+	float	m_survival				= 0.20;
 
 	// List of command line options
 	boost::program_options::options_description cliOptDesc("Options");
@@ -173,6 +174,22 @@ int main(int argc, char *argv[])
 	gentest.connections[7] = ConnectionGene(1, 8, 7);
 	gentest.connections[8] = ConnectionGene(8, 7, 8);
 	gentest.PrintToGV(gentest, outfile);
+
+
+	/***
+	 *** C0 Loop evolution until criteria match
+	 ***/
+
+
+	#define GENMAX 100 	// number of generations to try
+	uint32_t generations = 0;
+	do
+	{
+
+
+		generations++;
+	} while( generations<GENMAX );	// Specify stopping criteria here
+
 
 	/***
 	 *** Z0 Wrap up
