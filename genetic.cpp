@@ -28,10 +28,9 @@ double ActivationOutput (double input)
 }
 
 
-// double Activate(Genome* gen, DataEntry data)
-// {
-// 	return (gen->nodes)[g_inputs+1].value_now;
-// }
+/* CLASS Genome
+ */
+
 
 Genome::Genome(uint16_t n_inputs)
 {
@@ -49,6 +48,40 @@ Genome::Genome(uint16_t n_inputs)
 		nodes[n] = NodeGene(n, NodeType::SENSOR);
 		connections[make_pair(n,n_inputs+1)] = ConnectionGene(n, n_inputs+1, n); // Initial innovation matches sensor node ID 
 	}
+}
+
+
+double Genome::Activate(DataEntry data)
+{
+	// Move all valueNow to valueLast
+	for(map<uint16_t, NodeGene>::iterator 
+		iterNode = nodes.begin();
+		iterNode != nodes.end();
+		iterNode++)
+		iterNode->second.valueLast = iterNode->second.valueNow;
+
+	// TODO
+	return nodes[g_inputs+1].valueNow;
+}
+
+
+double Genome::GetFitness(vector<DataEntry>* database, bool store)
+{
+	double fitness = 0.0;
+
+	/* Go through every entry. Perform an activation, get the prediction.
+	 * Sum the square of errors.
+	 * IMPORTANT: the entry database must be sorted logically for recurrent networks to make sense 
+	 */
+	for(vector<DataEntry>::iterator 
+		iterDB = database->begin();
+		iterDB != database->end();
+		iterDB++)
+	{
+		double prediction = this->Activate(*iterDB);
+		fitness += pow(prediction-iterDB->contact_time, 2);
+	}
+	return fitness;
 }
 
 

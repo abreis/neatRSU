@@ -48,8 +48,8 @@ public:
 	NodeType	type;
 
 	// The following holds values throughout activations with recurrency
-	double		value_last=0;
-	double		value_now=0;
+	double		valueLast=0;
+	double		valueNow=0;
 
 	NodeGene(){};
 	NodeGene(uint16_t iid, NodeType ttype) 
@@ -90,8 +90,11 @@ public:
 	Genome(uint16_t n_inputs);
 
 	// Push a set of inputs through a genome, and return the value of the output node.
-	double Activate(DataEntry data);
+	double Activate(DataEntry entry);
 
+	// Run a complete DB through this genome, compute every prediction, and return fitness.
+	// If store==true, store each prediction in the database at database[i]->prediction;
+	double GetFitness(vector<DataEntry>* database, bool store=false);
 
 	/* Mutations
 	 */

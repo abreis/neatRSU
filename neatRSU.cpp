@@ -4,7 +4,11 @@
 // Debug flag
 bool gm_debug = false;
 
-// Number of inputs in the system
+/* Number of inputs in the system
+ * g_inputs+1 -> output node
+ * g_inputs+2 -> bias node
+ * g_inputs+3 -> first hidden node
+ */ 
 uint16_t g_inputs = 0;
 
 int main(int argc, char *argv[])
@@ -68,6 +72,9 @@ int main(int argc, char *argv[])
 	 ***/
 
 
+	// Database to store training data
+	vector<DataEntry> TrainingDB;
+
 	if(m_traindata.empty())
 		{ cout << "ERROR\tPlease specify a file with training data." << endl; return 1; }
 	else
@@ -76,9 +83,6 @@ int main(int argc, char *argv[])
 
 		ifstream trainDataIn( m_traindata.c_str() );
 		if (!trainDataIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; return 1; }
-
-		// Database to store training data
-		vector<DataEntry> TrainingDB;
 
 		// Setup boost::tokenizer
 		vector<string> fields; string line;
@@ -105,6 +109,9 @@ int main(int argc, char *argv[])
 	 ***/
 
 
+	// Database to store training data
+	vector<DataEntry> TestDB;
+
 	// Check if a test data file was specified in the options.
 	if(m_testdata.empty())
 		{ cout << "INFO\tNo test data provided, evaluation to be performed on training data only." << endl; }
@@ -116,8 +123,6 @@ int main(int argc, char *argv[])
 		ifstream testDataIn( m_testdata.c_str() );
 		if (!testDataIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; return 1; }
 
-		// Database to store training data
-		vector<DataEntry> TestDB;
 
 		// Setup boost::tokenizer
 		vector<string> fields; string line;
@@ -168,14 +173,29 @@ int main(int argc, char *argv[])
 	 *** B0 Setup neural network
 	 ***/
 
-	// Test code
-	string outfile = "testgv.gv";
-	Genome gentest(6);
-	gentest.connections[make_pair(1,5)].enabled=false;
-	gentest.nodes[8] = NodeGene(8, NodeType::HIDDEN);
-	gentest.connections[make_pair(1,8)] = ConnectionGene(1, 8, 7);
-	gentest.connections[make_pair(8,7)] = ConnectionGene(8, 7, 8);
-	gentest.PrintToGV(gentest, outfile);
+	// Set global number of inputs and input names
+	g_inputs = 6;
+	map<uint16_t,string> g_inputNames = 
+		{
+			{1, "id"},
+			{2, "time"},
+			{3, "lat"},
+			{4, "lon"},
+			{5, "speed"},
+			{6, "heading"}
+		};
+
+	// Create a population
+	Population population;
+
+	// Create the first species
+	Species firstSpecies;
+
+	// Push the first genome
+	Genome firstGenome(g_inputs);
+	firstSpecies.genomes.push_back(firstGenome);
+	population.species.push_back(firstSpecies);
+
 
 	/***
 	 *** C0 Loop evolution until criteria match
