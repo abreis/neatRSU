@@ -1,32 +1,43 @@
 #ifndef GENETIC_H_
 #define GENETIC_H_
 
-#include "neural.h"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <cmath>
+
 #include <map>
 #include <vector>
+
+#include "neatRSU.h"
 
 using namespace std;
 
 /* Definitions
    ----------- */
+enum NodeType { SENSOR, HIDDEN, OUTPUT, BIAS };
 
-/*
-A Population has Species
-Species have Genomes
-*/
+
 
 
 /* Functions
    --------- */
+// Custom sigmoidal transfer function.
+double ActivationSigmoid (double input);
 
+// Output transfer function.
+double ActivationOutput (double input);
 
 
 
 /* Classes and Structs
    ------------------- */
+
+/*
+ * A Population has Species
+ * Species have Genomes
+ * Genomes have Nodes and Connections
+ */
 
 
 // A node gene.
@@ -35,6 +46,10 @@ class NodeGene
 public:
 	uint16_t	id;
 	NodeType	type;
+
+	// The following holds values throughout activations with recurrency
+	double		value_last=0;
+	double		value_now=0;
 
 	NodeGene(){};
 	NodeGene(uint16_t iid, NodeType ttype) 
@@ -73,6 +88,9 @@ public:
 
 	// Set up a new genome with a specific number of inputs.
 	Genome(uint16_t n_inputs);
+
+	// Push a set of inputs through a genome, and return the value of the output node.
+	double Activate(DataEntry data);
 
 
 	/* Mutations

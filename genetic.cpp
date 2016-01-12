@@ -6,6 +6,32 @@ uint16_t g_innovNumber = 0;
 // List of innovations (pair(fromNode,toNode),innov#)
 map<pair<uint16_t,uint16_t>,uint16_t> g_innovations; 
 
+extern uint16_t g_inputs;
+
+
+
+
+double ActivationSigmoid (double input)
+{
+	/* The steepened sigmoid allows more fine tuning at extreme activations. 
+	 * It is optimized to be close to linear during its steepest ascent 
+	 * between activations −0.5 and 0.5.
+	 */
+	 return ( 1.0/( 1.0+exp(-4.9*input) ) );
+}
+
+
+double ActivationOutput (double input)
+{
+	// Linear.
+	return input;
+}
+
+
+// double Activate(Genome* gen, DataEntry data)
+// {
+// 	return (gen->nodes)[g_inputs+1].value_now;
+// }
 
 Genome::Genome(uint16_t n_inputs)
 {

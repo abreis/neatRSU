@@ -1,9 +1,11 @@
 #include "neatRSU.h"
-#include "neural.h"
 #include "genetic.h"
 
-bool m_debug = false;
+// Debug flag
+bool gm_debug = false;
 
+// Number of inputs in the system
+uint16_t g_inputs = 0;
 
 int main(int argc, char *argv[])
 {
@@ -34,7 +36,7 @@ int main(int argc, char *argv[])
 	float 	m_p_mutate_addweight	= 0.50;
 	float 	m_p_mutate_addconn		= 0.01;
 	float 	m_p_mutate_addnode		= 0.01;
-	float	m_survival				= 0.20;
+	// float	m_survival				= 0.20;
 
 	// List of command line options
 	boost::program_options::options_description cliOptDesc("Options");
@@ -54,7 +56,7 @@ int main(int argc, char *argv[])
 	if(argc==1) { cout << cliOptDesc; return 1; }
 
 	// Process options
-	if (varMap.count("debug")) 					m_debug		= true;
+	if (varMap.count("debug")) 					gm_debug		= true;
 	if (varMap.count("train-data"))				m_traindata	= varMap["train-data"].as<string>();
 	if (varMap.count("test-data"))				m_testdata	= varMap["test-data"].as<string>();
 	if (varMap.count("seed"))					m_seed		= varMap["seed"].as<int>();
@@ -174,7 +176,6 @@ int main(int argc, char *argv[])
 	gentest.connections[make_pair(1,8)] = ConnectionGene(1, 8, 7);
 	gentest.connections[make_pair(8,7)] = ConnectionGene(8, 7, 8);
 	gentest.PrintToGV(gentest, outfile);
-
 
 	/***
 	 *** C0 Loop evolution until criteria match
