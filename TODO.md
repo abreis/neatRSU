@@ -41,3 +41,4 @@ Cell maps (throw out)
 Tentative
 ---------
 - A routine to save and load Genomes to files
+- Implement no recurrency (need special addconnection() and activate()) and test pure regression

@@ -219,40 +219,74 @@ int main(int argc, char *argv[])
 	 ***/
 
 
-	uint32_t generationNumber = 0;
-	do
-	{
-		// Go through each species
-		for(vector<Species>::iterator 
-			iterSpecies = population.species.begin();
-			iterSpecies != population.species.end();
-			iterSpecies++)
-		{
-			// Go through each genome in this species
-			for(vector<Genome>::iterator
-				iterGenome = iterSpecies->genomes.begin();
-				iterGenome != iterSpecies->genomes.end();
-				iterGenome++)
-			{
-				// Mutate Perturb Weights?
-				// Mutate Add Node?
-				// Mutate Add Connection?
+	// uint32_t generationNumber = 0;
+	// do
+	// {
+	// 	// Go through each species
+	// 	for(vector<Species>::iterator 
+	// 		iterSpecies = population.species.begin();
+	// 		iterSpecies != population.species.end();
+	// 		iterSpecies++)
+	// 	{
+	// 		// Go through each genome in this species
+	// 		for(vector<Genome>::iterator
+	// 			iterGenome = iterSpecies->genomes.begin();
+	// 			iterGenome != iterSpecies->genomes.end();
+	// 			iterGenome++)
+	// 		{
+	// 			// Mutate Perturb Weights?
+	// 			// Mutate Add Node?
+	// 			// Mutate Add Connection?
 
-			} // END GENOME ITERATION
+	// 		} // END GENOME ITERATION
 
-			// Perform intra-species mating
+	// 		// Perform intra-species mating
 
-		} // END SPECIES ITERATION
-
-
-	/* Generation end post-processing
-	 */
+	// 	} // END SPECIES ITERATION
 
 
-	// Generation loop control
-	generationNumber++;
-	} while( generationNumber < m_genmax );	// Specify stopping criteria here
+	// /* Generation end post-processing
+	//  */
 
+
+	// // Generation loop control
+	// generationNumber++;
+	// } while( generationNumber < m_genmax );	// Specify stopping criteria here
+
+
+	// Test: create two genomes and mate them
+	Genome gen1(g_inputs);
+	Genome gen2(g_inputs);
+
+	// Mutate them a bit
+	gen1.MutatePerturbWeights();
+	gen1.MutateAddNode();
+	gen1.MutateAddConnection();
+	gen1.MutateAddNode();
+
+	gen2.MutatePerturbWeights();
+	gen2.MutateAddNode();
+	gen2.MutateAddConnection();
+	gen2.MutateAddNode();
+	gen2.MutateAddConnection();
+	gen2.MutateAddNode();
+
+	gen1.fitness = gen1.GetFitness(&TrainingDB);
+	gen2.fitness = gen2.GetFitness(&TrainingDB);
+
+	Genome gen3 = MateGenomes(&gen1, &gen2);
+
+	cout << "\nFirst parent\n";
+	gen1.Print();
+	gen1.PrintToGV("gen1.gv");
+
+	cout << "\nSecond parent\n";
+	gen2.Print();
+	gen2.PrintToGV("gen2.gv");
+
+	cout << "\nOffspring\n";
+	gen3.Print();
+	gen3.PrintToGV("gen3.gv");
 
 	/***
 	 *** Z0 Wrap up

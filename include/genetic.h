@@ -139,7 +139,7 @@ public:
 
 // Mates two genomes and returns the resulting offspring.
 // Uses each genome's fitness, so be sure it is up to date.
-Genome MateGenomes(Genome firstParent, Genome secondParent);
+Genome MateGenomes(Genome* const firstParent, Genome* const secondParent);
 
 
 // A species, a collection of genomes.

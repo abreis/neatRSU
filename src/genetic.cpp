@@ -172,7 +172,7 @@ double Genome::Activate(DataEntry data)
 
 double Genome::GetFitness(vector<DataEntry>* database, bool store)
 {
-	double fitness = 0.0;
+	double rfitness = 0.0;
 
 	/* Go through every entry. Perform an activation, get the prediction.
 	 * Sum the square of errors.
@@ -184,10 +184,10 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 		iterDB++)
 	{
 		double prediction = this->Activate(*iterDB);
-		fitness += pow(prediction-iterDB->contact_time, 2);
+		rfitness += pow(prediction-iterDB->contact_time, 2);
 		if(store) iterDB->prediction=prediction;
 	}
-	return fitness;
+	return rfitness;
 }
 
 
@@ -401,7 +401,7 @@ void Genome::PrintToGV(string filename)
 }
 
 
-Genome MateGenomes(Genome* firstParent, Genome* secondParent)
+Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 {
 	Genome offspring;
 
@@ -429,16 +429,17 @@ Genome MateGenomes(Genome* firstParent, Genome* secondParent)
 		auto iterGeneOnLeastFit = leastFitGenome->connections.find(iterGenesOnMostFit->first);
 		if(iterGeneOnLeastFit == leastFitGenome->connections.end())
 		{
-			// The other Genome doesn't have it, use ours if it's not disabled.
-			if(iterGenesOnMostFit->second.enabled)
-				offspring.connections[iterGenesOnMostFit->first] = iterGenesOnMostFit->second;
+			// The other Genome doesn't have it, use ours *even* if it's disabled.
+			// if(iterGenesOnMostFit->second.enabled)
+			offspring.connections[iterGenesOnMostFit->first] = iterGenesOnMostFit->second;
 		}
 		else
 		{
 			// The other Genome has it too, see if they're both disabled
 			if(!iterGenesOnMostFit->second.enabled and !iterGeneOnLeastFit->second.enabled)		
 			{
-				// Both are disabled, do nothing.
+				// Both are disabled, copy ours.
+				offspring.connections[iterGenesOnMostFit->first] = iterGenesOnMostFit->second;
 			}
 			else
 			{
@@ -446,7 +447,7 @@ Genome MateGenomes(Genome* firstParent, Genome* secondParent)
 				pair<uint16_t,uint16_t> geneKey = iterGenesOnMostFit->first;
 				assert(geneKey == iterGeneOnLeastFit->first); // TODO remove
 
-				// Either (or both) are enabled, so do the copy
+				// Either (or both) are enabled, so do the copy 50/50
 				if(g_rnd_5050(g_rng))
 					// Take from the mostFitGenome
 					offspring.connections[geneKey] = iterGenesOnMostFit->second;
