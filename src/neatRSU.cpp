@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
 	string 	m_traindata		= "";
 	string 	m_testdata 		= "";
 	int 	m_seed			= 0;
+	uint32_t m_genmax		= 1;
 
 	// Non-CLI-configurable options
 	float 	m_p_mutate_addweight	= 0.50;
@@ -60,6 +61,7 @@ int main(int argc, char *argv[])
 		("train-data", 	boost::program_options::value<string>(), 	"location of training data CSV")
 		("test-data", 	boost::program_options::value<string>(), 	"location of test data CSV")
 		("seed", 		boost::program_options::value<int>(), 		"random number generator seed")
+		("generations", boost::program_options::value<uint32_t>(),	"number of generations to perform")
 	    ("debug", 													"enable debug mode")
 	    ("help", 													"give this help list")
 	;
@@ -73,9 +75,10 @@ int main(int argc, char *argv[])
 
 	// Process options
 	if (varMap.count("debug")) 					gm_debug		= true;
-	if (varMap.count("train-data"))				m_traindata	= varMap["train-data"].as<string>();
-	if (varMap.count("test-data"))				m_testdata	= varMap["test-data"].as<string>();
-	if (varMap.count("seed"))					m_seed		= varMap["seed"].as<int>();
+	if (varMap.count("train-data"))				m_traindata		= varMap["train-data"].as<string>();
+	if (varMap.count("test-data"))				m_testdata		= varMap["test-data"].as<string>();
+	if (varMap.count("seed"))					m_seed			= varMap["seed"].as<int>();
+	if (varMap.count("generations"))			m_genmax		= varMap["generations"].as<uint32_t>();
 	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
 
 
@@ -198,29 +201,49 @@ int main(int argc, char *argv[])
 	firstSpecies.genomes.push_back(firstGenome);
 	population.species.push_back(firstSpecies);
 
-	// TODO test
-	string outfile = "testgv.gv";
-	Genome gentest(g_inputs);
-	gentest.connections[make_pair(1,g_inputs+1)].enabled=false;
-	gentest.nodes[d_firsthidnode] = NodeGene(g_inputs, NodeType::HIDDEN);
-	gentest.connections[make_pair(1,d_firsthidnode)] = ConnectionGene(1, d_firsthidnode, g_inputs+1);
-	gentest.connections[make_pair(d_firsthidnode,d_outputnode)] = ConnectionGene(d_firsthidnode, d_outputnode, g_inputs+2);
-	gentest.connections[make_pair(d_biasnode,d_firsthidnode)] = ConnectionGene(d_biasnode, d_firsthidnode, g_inputs+3);
-	gentest.PrintToGV(gentest, outfile);
+	// // TODO test
+	// string outfile = "testgv.gv";
+	// Genome gentest(g_inputs);
+	// gentest.connections[make_pair(1,d_outputnode)].enabled=false;
+	// gentest.nodes[d_firsthidnode] = NodeGene(g_inputs, NodeType::HIDDEN);
+	// gentest.connections[make_pair(1,d_firsthidnode)] = ConnectionGene(1, d_firsthidnode, g_inputs+1);
+	// gentest.connections[make_pair(d_firsthidnode,d_outputnode)] = ConnectionGene(d_firsthidnode, d_outputnode, g_inputs+2);
+	// gentest.connections[make_pair(d_biasnode,d_firsthidnode)] = ConnectionGene(d_biasnode, d_firsthidnode, g_inputs+3);
+	// gentest.PrintToGV(gentest, outfile);
 
 	/***
 	 *** C0 Loop evolution until criteria match
 	 ***/
 
+	// Create a genome
+	Genome gentest(g_inputs);
 
-	#define GENMAX 100 	// number of generations to try
-	uint32_t generations = 0;
+	// Disable all links, add subnodes and sublinks
+	for(int i=1; i<=g_inputs; i++)
+	{
+		gentest.connections[make_pair(i,d_outputnode)].enabled=false;
+		gentest.nodes[d_firsthidnode+i-1] = NodeGene(d_firsthidnode+i-1, NodeType::HIDDEN);
+		gentest.connections[make_pair(i,d_firsthidnode+i-1)] = ConnectionGene(i, d_firsthidnode+i-1, g_inputs+2*i-1);
+		gentest.connections[make_pair(d_firsthidnode+i-1,d_outputnode)] = ConnectionGene(d_firsthidnode+i-1, d_outputnode, g_inputs+2*i);
+	}
+
+	gentest.PrintToGV("gentest.gv");
+
+
+	uint32_t generationNumber = 0;
 	do
 	{
 
 
-		generations++;
-	} while( generations<GENMAX );	// Specify stopping criteria here
+		// Push two DataEntry through it
+		// cout << "Activation " << generationNumber << ": " << gentest.Activate( *(TrainingDB.begin()+generationNumber) ) << endl;
+
+		// Push the whole DB through
+		cout << gentest.GetFitness(&TrainingDB) << endl;
+
+
+		generationNumber++;
+	} while( generationNumber < m_genmax );	// Specify stopping criteria here
 
 
 	/***

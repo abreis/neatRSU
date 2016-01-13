@@ -116,7 +116,7 @@ public:
 	void Print();
 
 	// Print the contents of this Genome as Graphviz language to a file
-	void PrintToGV(Genome gen, string filename);
+	void PrintToGV(string filename);
 };
 
 // A species, a collection of genomes.

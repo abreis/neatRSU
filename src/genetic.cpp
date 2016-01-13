@@ -64,6 +64,8 @@ double Genome::Activate(DataEntry data)
 	nodes[5].valueNow=data.speed;
 	nodes[6].valueNow=data.heading;
 
+	cout << "ATTHEINPUTS" << endl; this->Print();
+
 	// Move all valueNow to valueLast, reset valueNow
 	for(map<uint16_t, NodeGene>::iterator 
 		iterNode = nodes.begin();
@@ -73,6 +75,7 @@ double Genome::Activate(DataEntry data)
 		iterNode->second.valueLast = iterNode->second.valueNow;
 		iterNode->second.valueNow = 0;
 	}
+	nodes[d_biasnode].valueNow = 1; // Don't touch the bias
 
 	// Run through each connection
 	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
@@ -81,9 +84,26 @@ double Genome::Activate(DataEntry data)
 		iterConn++)
 	{
 		// Add the connection's effect to the destination node's 'valueNow'
-		nodes[iterConn->second.to_node].valueNow += 
-			nodes[iterConn->second.from_node].valueLast * iterConn->second.weight;
+		if(iterConn->second.enabled)
+			nodes[iterConn->second.to_node].valueNow += 
+				nodes[iterConn->second.from_node].valueLast * iterConn->second.weight;
 	}
+
+	// On hidden nodes, this value must now go through the activation sigmoid
+	map<uint16_t, NodeGene>::iterator iterNode = nodes.begin();
+	for( advance(iterNode, d_firsthidnode-1);
+	iterNode != nodes.end();
+	iterNode++)
+		if(iterNode->second.type==NodeType::HIDDEN)
+		{
+			cout << "sigmoiding node " << iterNode->first << endl;
+			iterNode->second.valueNow = ActivationSigmoid(iterNode->second.valueNow);
+		}
+
+	// Same for the output node
+	nodes[d_outputnode].valueNow = ActivationOutput(nodes[d_outputnode].valueNow);
+
+	cout << "ATTHEEND" << endl; this->Print();
 
 	// Return the value at the output node
 	return nodes[d_outputnode].valueNow;
@@ -148,6 +168,7 @@ bool Genome::Verify(void)
 
 void Genome::Print()
 {
+	// Print a list of nodes
 	for(uint16_t i = nodes.size(); i>0; i--)
 		cout << "----"; cout << '\n';
 	for(map<uint16_t, NodeGene>::const_iterator 
@@ -162,6 +183,13 @@ void Genome::Print()
 		cout << ( (iterNode->second.type==NodeType::SENSOR)?"Sen ":( (iterNode->second.type==NodeType::HIDDEN)?"Hid ":"Out " ) ); cout << '\n';
 	for(uint16_t i = nodes.size(); i>0; i--)
 		cout << "----"; cout << '\n';
+
+	// Print each node's values
+	for(map<uint16_t, NodeGene>::const_iterator 
+		iterNode = nodes.begin();
+		iterNode != nodes.end();
+		iterNode++)
+		cout << iterNode->first << '\t' << iterNode->second.valueLast << '\t' << iterNode->second.valueNow << '\n';
 
 	// Print a list of connections
 	cout 	<< "-------------------------------------" << '\n'
@@ -185,7 +213,7 @@ void Genome::Print()
 }
 
 
-void Genome::PrintToGV(Genome gen, string filename)
+void Genome::PrintToGV(string filename)
 {
 	// Open file
 	ofstream gvout(filename.c_str());
