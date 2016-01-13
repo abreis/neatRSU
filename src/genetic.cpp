@@ -209,19 +209,19 @@ void Genome::WipeMemory(void)
 /* Mutations
  */
 
-
-void Genome::MutatePerturbWeights(boost::random::normal_distribution<> randomDistribution)
+// TODO: individual links should be mutated probabilistically
+void Genome::MutatePerturbWeights(void)
 {
 	// Go through each connection, perturb its weight.
 		for(map<pair<uint16_t,uint16_t>, ConnectionGene>::iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
-			iterConn->second.weight += randomDistribution(rng);
+			iterConn->second.weight += g_rnd_gauss(g_rng);
 }
 
 
-void Genome::MutateAddConnection(boost::random::normal_distribution<> randomDistribution)
+void Genome::MutateAddConnection(void)
 {
 	// Get two random node numbers. 
 	// 'from' can be anything, 'to' must exclude inputs and bias, but not output
@@ -232,17 +232,17 @@ void Genome::MutateAddConnection(boost::random::normal_distribution<> randomDist
 	// Try pairs until we find one that either doesn't exist or is disabled
 	map<uint16_t, NodeGene>::const_iterator iterSrcNode, iterDstNode;
 	uint16_t srcNode, dstNode;
-	double newWeight = randomDistribution(rng);
+	double newWeight = g_rnd_gauss(g_rng);
 	do
 	{
 		// Draw a source node. Anything goes.
-		uint16_t randomNodeId = randomSrcNode(rng);
+		uint16_t randomNodeId = randomSrcNode(g_rng);
 		iterSrcNode = nodes.begin();
 		advance(iterSrcNode, randomNodeId);
 		srcNode = iterSrcNode->first;
 
 		// Get the destination node. If we draw nodes.size() (which is last+1, invalid), select the output node.
-		randomNodeId = randomDstNode(rng);
+		randomNodeId = randomDstNode(g_rng);
 		if(randomNodeId == nodes.size()) 
 			dstNode = d_outputnode;
 		else
@@ -274,7 +274,7 @@ void Genome::MutateAddNode(void)
 	do
 	{
 		// Pull a random number
-		uint16_t rConnId = randomConnection(rng);
+		uint16_t rConnId = randomConnection(g_rng);
 
 		// Get an iterator to the connection
 		iterConnection = connections.begin();
@@ -398,4 +398,77 @@ void Genome::PrintToGV(string filename)
 	// Close file
 	gvout << "}\n";
 	gvout.close();
+}
+
+
+Genome MateGenomes(Genome* firstParent, Genome* secondParent)
+{
+	Genome offspring;
+
+	/* Perform the crossover.
+	 * Matching ConnectionGenes are copied over, if both enabled.
+	 * If one is enabled and the other isn't, copy occurs based on probability TODO
+	 * Excess genes are copied from the most fit parent.
+	 */
+
+	// Find the most fit parent and iterate its ConnectionGenes.
+	// Less fitness is more fit.
+	Genome* mostFitGenome; Genome* leastFitGenome; 
+	if(firstParent->fitness < secondParent->fitness)
+		{ mostFitGenome = firstParent; leastFitGenome = secondParent; }
+	else
+		{ mostFitGenome = secondParent; leastFitGenome = firstParent; }
+
+	// Run through most fit parent's ConnectionGenes
+	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator
+		iterGenesOnMostFit = mostFitGenome->connections.begin();
+		iterGenesOnMostFit != mostFitGenome->connections.end();
+		iterGenesOnMostFit++)
+	{
+		// Find this ConnectionGene on the leastFitGenome
+		auto iterGeneOnLeastFit = leastFitGenome->connections.find(iterGenesOnMostFit->first);
+		if(iterGeneOnLeastFit == leastFitGenome->connections.end())
+		{
+			// The other Genome doesn't have it, use ours if it's not disabled.
+			if(iterGenesOnMostFit->second.enabled)
+				offspring.connections[iterGenesOnMostFit->first] = iterGenesOnMostFit->second;
+		}
+		else
+		{
+			// The other Genome has it too, see if they're both disabled
+			if(!iterGenesOnMostFit->second.enabled and !iterGeneOnLeastFit->second.enabled)		
+			{
+				// Both are disabled, do nothing.
+			}
+			else
+			{
+				// Key of the new ConnectionGene (should be the same on mostFit, leastFit, and offspring)
+				pair<uint16_t,uint16_t> geneKey = iterGenesOnMostFit->first;
+				assert(geneKey == iterGeneOnLeastFit->first); // TODO remove
+
+				// Either (or both) are enabled, so do the copy
+				if(g_rnd_5050(g_rng))
+					// Take from the mostFitGenome
+					offspring.connections[geneKey] = iterGenesOnMostFit->second;
+				else
+					// Take from the leastFitGenome
+					offspring.connections[geneKey] = iterGeneOnLeastFit->second;
+				
+				// Finally, if one or the other were disabled, randomly decide if the gene will be enabled or disabled.
+				if( !iterGenesOnMostFit->second.enabled or !iterGeneOnLeastFit->second.enabled )
+				{
+					if(g_rnd_inheritDisabled(g_rng))
+						offspring.connections[geneKey].enabled = true;
+					else
+						offspring.connections[geneKey].enabled = false;
+				}
+			}
+
+		}
+	}
+
+	// Now add all necessary nodes
+	offspring.nodes = mostFitGenome->nodes;
+
+	return offspring;
 }

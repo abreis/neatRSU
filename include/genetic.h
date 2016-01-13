@@ -88,11 +88,15 @@ public:
 	// The current fitness of this genome
 	uint32_t fitness = 0;
 
-	// Set up a new genome with a specific number of inputs.
-	Genome(uint16_t n_inputs);
 
 	/* Essentials
 	 */ 
+	// A blank genome, for copies and mating.
+	Genome(){};
+
+	// Set up a new genome with a specific number of inputs.
+	Genome(uint16_t n_inputs);
+
 	// Adds a new node to the genome. Checks if it already exists. If no ID is specified, finds and increments.
 	uint16_t AddNode(NodeType type, uint16_t id=UINT16_MAX);
 
@@ -110,13 +114,14 @@ public:
 	// Wipe the values inside the nodes.
 	void WipeMemory(void);
 
+
 	/* Mutations
 	 */
 	// Add a random value to the weights of this genome.
-	void MutatePerturbWeights(boost::random::normal_distribution<> randomDistribution);
+	void MutatePerturbWeights(void);
 
 	// Add a single new connection gene with a random weight.
-	void MutateAddConnection(boost::random::normal_distribution<> randomDistribution);
+	void MutateAddConnection(void);
 
 	// Split a connection gene into two and add a node in the middle.
 	void MutateAddNode(void);
@@ -130,6 +135,12 @@ public:
 	// Print the contents of this Genome as Graphviz language to a file
 	void PrintToGV(string filename);
 };
+
+
+// Mates two genomes and returns the resulting offspring.
+// Uses each genome's fitness, so be sure it is up to date.
+Genome MateGenomes(Genome firstParent, Genome secondParent);
+
 
 // A species, a collection of genomes.
 class Species

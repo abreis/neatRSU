@@ -19,24 +19,21 @@ v Run a DB through a genome and fill its predicted time-to-contact field
 v Apply a single data entry through a Genome and get the output (Activation)
 
 v Single node evolution
-- Fixed-size species evolution
 v Weight mutations
 v Structural mutations - AddNode
-- Structural mutations - AddConnection
-- Innovation numbers
-- Crossovers
-- Structural differences for speciation
+v Structural mutations - AddConnection
+v Innovation numbers
+v Crossovers
+- Fixed-size species evolution
+- Difference between two genomes (for speciation)
 
 - Keep track of the best genome across each species every generation
 - Print the best genome across all species each generation, identify its species (to see jumps to a different species)
 
 - Go through a DB and evaluate the goodness-of-fit from real contact to estimated contact time. (?)
 
-Genetic
--------
-- Difference between two genomes (for speciation)
 
-Cell maps
+Cell maps (throw out)
 ---------
 - Routine to build cell map at any instant
 - Routine to fill all DB entries with corresponding cell maps

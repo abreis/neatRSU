@@ -22,7 +22,14 @@ map<uint16_t,string> g_nodeNames =
 	{8, "bias"}
 };
 
-boost::random::mt19937 rng;
+boost::random::mt19937 						g_rng;
+
+boost::random::bernoulli_distribution<> 	g_rnd_5050;
+boost::random::bernoulli_distribution<> 	g_rnd_mutWeights;
+boost::random::bernoulli_distribution<> 	g_rnd_addConn;
+boost::random::bernoulli_distribution<> 	g_rnd_addNode;
+boost::random::bernoulli_distribution<> 	g_rnd_inheritDisabled;
+boost::random::normal_distribution<> 		g_rnd_gauss;
 
 
 int main(int argc, char *argv[])
@@ -55,6 +62,7 @@ int main(int argc, char *argv[])
 	float 	m_p_mutate_addweight	= 0.50;
 	float 	m_p_mutate_addconn		= 0.01;
 	float 	m_p_mutate_addnode		= 0.01;
+	float	m_p_inherit_disabled	= 0.50; // TODO
 	// float	m_survival				= 0.20;
 
 	// List of command line options
@@ -170,17 +178,18 @@ int main(int argc, char *argv[])
 
 	// We use boost::random and mt19937 as a source of randomness.
 	// The seed can be specified thorugh CLI
-	rng.seed(m_seed);
+	g_rng.seed(m_seed);
 
 	// Boolean (bernoulli) distributions
-	boost::random::bernoulli_distribution<> rng_5050		( 0.5 );
-	boost::random::bernoulli_distribution<> rng_mutweight	( m_p_mutate_addweight );
-	boost::random::bernoulli_distribution<> rng_addconn		( m_p_mutate_addconn );
-	boost::random::bernoulli_distribution<> rng_addnode		( m_p_mutate_addnode );
+	g_rnd_5050.param( 				boost::random::bernoulli_distribution<>::param_type(0.5) );
+	g_rnd_mutWeights.param( 		boost::random::bernoulli_distribution<>::param_type(m_p_mutate_addweight) );
+	g_rnd_addConn.param( 			boost::random::bernoulli_distribution<>::param_type(m_p_mutate_addconn) );
+	g_rnd_addNode.param( 			boost::random::bernoulli_distribution<>::param_type(m_p_mutate_addnode) );
+	g_rnd_inheritDisabled.param( 	boost::random::bernoulli_distribution<>::param_type(m_p_inherit_disabled) );
 
 	// Source of Gaussian randomness (for weight mutations)
 	// Inits: (mean,stdev)
-	boost::random::normal_distribution<> rng_gauss			( 0.0, 1.0 );
+	g_rnd_gauss.param( boost::random::normal_distribution<>::param_type( 0.0, 1.0 ) );
 
 	// To draw random integers (e.g. to randomly select a node), use:
 	// boost::random::uniform_int_distribution<> dist(min, max);
@@ -199,9 +208,10 @@ int main(int argc, char *argv[])
 	Species firstSpecies;
 
 	// Push the first genome
-	Genome firstGenome(g_inputs);
-	firstSpecies.genomes.push_back(firstGenome);
+	firstSpecies.genomes.push_back( Genome(g_inputs) );
 	population.species.push_back(firstSpecies);
+
+	// TODO: weird things may happen if the first genome's weights don't get randomized.
 
 
 	/***
@@ -209,38 +219,38 @@ int main(int argc, char *argv[])
 	 ***/
 
 
-	// Create a genome
-	Genome gentest(g_inputs);
-
-	// Perturb the weights
-	gentest.MutatePerturbWeights(rng_gauss);
-
-	gentest.PrintToGV("gentest.gv");
-
-
 	uint32_t generationNumber = 0;
 	do
 	{
-		// Push a DataEntry through it
-		// cout << "Activation " << generationNumber << ": " << gentest.Activate( *(TrainingDB.begin()+generationNumber) ) << endl;
+		// Go through each species
+		for(vector<Species>::iterator 
+			iterSpecies = population.species.begin();
+			iterSpecies != population.species.end();
+			iterSpecies++)
+		{
+			// Go through each genome in this species
+			for(vector<Genome>::iterator
+				iterGenome = iterSpecies->genomes.begin();
+				iterGenome != iterSpecies->genomes.end();
+				iterGenome++)
+			{
+				// Mutate Perturb Weights?
+				// Mutate Add Node?
+				// Mutate Add Connection?
 
-		// Push the whole DB through
-		cout << "Activation " << generationNumber << ", fitness: " << gentest.GetFitness(&TrainingDB) << endl;
+			} // END GENOME ITERATION
 
-		// Mutate add node
-		gentest.MutateAddNode();
-		// population.species.begin()->genomes.begin()->MutateAddNode();
+			// Perform intra-species mating
 
-		// Mutate add connection
-		gentest.MutateAddConnection(rng_gauss);
-
-		// Print
-		string filename = "gentest" + to_string(generationNumber) + ".gv";
-		gentest.PrintToGV(filename);
+		} // END SPECIES ITERATION
 
 
+	/* Generation end post-processing
+	 */
 
-		generationNumber++;
+
+	// Generation loop control
+	generationNumber++;
 	} while( generationNumber < m_genmax );	// Specify stopping criteria here
 
 
@@ -254,3 +264,20 @@ int main(int argc, char *argv[])
 }
 
 
+
+// // Push a DataEntry through it
+// // cout << "Activation " << generationNumber << ": " << gentest.Activate( *(TrainingDB.begin()+generationNumber) ) << endl;
+
+// // Push the whole DB through
+// cout << "Activation " << generationNumber << ", fitness: " << gentest.GetFitness(&TrainingDB) << endl;
+
+// // Mutate add node
+// gentest.MutateAddNode();
+// // population.species.begin()->genomes.begin()->MutateAddNode();
+
+// // Mutate add connection
+// gentest.MutateAddConnection(rng_gauss);
+
+// // Print
+// string filename = "gentest" + to_string(generationNumber) + ".gv";
+// gentest.PrintToGV(filename);
