@@ -229,6 +229,7 @@ int main(int argc, char *argv[])
 
 		// Mutate add node
 		gentest.MutateAddNode();
+		// population.species.begin()->genomes.begin()->MutateAddNode();
 
 		// Mutate add connection
 		gentest.MutateAddConnection(rng_gauss);

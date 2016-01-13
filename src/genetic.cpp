@@ -1,10 +1,9 @@
 #include "genetic.h"
 
 // Global innovation number
-uint16_t g_innovNumber = 0;
-
+uint16_t g_innovations = 0;
 // List of innovations (pair(fromNode,toNode),innov#)
-map<pair<uint16_t,uint16_t>,uint16_t> g_innovations; 
+map<pair<uint16_t,uint16_t>,uint16_t> g_innovationList; 
 
 
 /* Functions
@@ -99,10 +98,22 @@ bool Genome::AddConnection(uint16_t from, uint16_t to, bool reenable, double inW
 	// 03 If it doesn't exist, create it and return true.
 	else 
 	{
-		// TODO innovation
-		// Innovation must satisfy initial node creations:
-		// // connections[make_pair(n,d_outputnode)] = ConnectionGene(n, d_outputnode, n); // Initial innovation matches sensor node ID 
-		connections[make_pair(from,to)] = ConnectionGene(from, to, 0,  ( (inWeight==DBL_MAX)?1.0:inWeight )  );
+		// Innovation handling.
+		// First see if our pair exists in the innovation list
+		uint16_t pairInnovation = 0;
+		auto iterInnov = g_innovationList.find(make_pair(from,to));
+		if( iterInnov == g_innovationList.end())
+		{
+			// We didn't find this pair in the innovation list. Increment and add.
+			g_innovations++; 
+			pairInnovation = g_innovations; 
+			g_innovationList[make_pair(from,to)] = g_innovations;
+		}
+		else
+			// Innovation already existed, use it.
+			pairInnovation = iterInnov->second;
+
+		connections[make_pair(from,to)] = ConnectionGene(from, to, pairInnovation,  ( (inWeight==DBL_MAX)?1.0:inWeight )  );
 		return true;
 	}
 	// 04 Else return false.
