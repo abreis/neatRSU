@@ -100,6 +100,9 @@ public:
 
 	/* Mutations
 	 */
+	// Add a random value to the weights of this genome.
+	void MutatePerturbWeights(boost::random::normal_distribution<> randomDistribution);
+
 	// Add a single new connection gene with a specified weight.
 	void MutateAddConnection(double weight);
 

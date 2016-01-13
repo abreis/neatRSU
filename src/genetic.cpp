@@ -64,8 +64,6 @@ double Genome::Activate(DataEntry data)
 	nodes[5].valueNow=data.speed;
 	nodes[6].valueNow=data.heading;
 
-	cout << "ATTHEINPUTS" << endl; this->Print();
-
 	// Move all valueNow to valueLast, reset valueNow
 	for(map<uint16_t, NodeGene>::iterator 
 		iterNode = nodes.begin();
@@ -95,15 +93,10 @@ double Genome::Activate(DataEntry data)
 	iterNode != nodes.end();
 	iterNode++)
 		if(iterNode->second.type==NodeType::HIDDEN)
-		{
-			cout << "sigmoiding node " << iterNode->first << endl;
 			iterNode->second.valueNow = ActivationSigmoid(iterNode->second.valueNow);
-		}
 
 	// Same for the output node
 	nodes[d_outputnode].valueNow = ActivationOutput(nodes[d_outputnode].valueNow);
-
-	cout << "ATTHEEND" << endl; this->Print();
 
 	// Return the value at the output node
 	return nodes[d_outputnode].valueNow;
@@ -133,10 +126,19 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 
 /* Mutations
  */
+void Genome::MutatePerturbWeights(boost::random::normal_distribution<> randomDistribution)
+{
+	// Go through each connection, perturb its weight.
+		for(map<pair<uint16_t,uint16_t>, ConnectionGene>::iterator 
+		iterConn = connections.begin();
+		iterConn != connections.end();
+		iterConn++)
+			iterConn->second.weight += randomDistribution(rng);
+}
 
 
 // Add a single new connection gene with a specified weight.
-void MutateAddConnection(double weight)
+void Genome::MutateAddConnection(double weight)
 {
 
 }
@@ -147,7 +149,7 @@ void MutateAddConnection(double weight)
  * the new connection leading out receives the same weight as the old connection. 
  * This method of adding nodes minimizes the initial effect of the mutation.
  */
-void MutateAddNode(void)
+void Genome::MutateAddNode(void)
 {
 
 }

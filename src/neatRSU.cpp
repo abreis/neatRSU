@@ -22,6 +22,8 @@ map<uint16_t,string> g_nodeNames =
 	{8, "bias"}
 };
 
+boost::random::mt19937 rng;
+
 
 int main(int argc, char *argv[])
 {
@@ -168,7 +170,7 @@ int main(int argc, char *argv[])
 
 	// We use boost::random and mt19937 as a source of randomness.
 	// The seed can be specified thorugh CLI
-	boost::random::mt19937 rng(m_seed);
+	rng.seed(m_seed);
 
 	// Boolean (bernoulli) distributions
 	boost::random::bernoulli_distribution<> rng_5050		( 0.5 );
@@ -235,11 +237,19 @@ int main(int argc, char *argv[])
 	{
 
 
-		// Push two DataEntry through it
+		// Push a DataEntry through it
 		// cout << "Activation " << generationNumber << ": " << gentest.Activate( *(TrainingDB.begin()+generationNumber) ) << endl;
 
 		// Push the whole DB through
-		cout << gentest.GetFitness(&TrainingDB) << endl;
+		cout << "Activation " << generationNumber << ", fitness: " << gentest.GetFitness(&TrainingDB) << endl;
+
+		// Perturb the weights
+		gentest.MutatePerturbWeights(rng_gauss);
+
+		// Print
+		string filename = "gentest" + to_string(generationNumber) + ".gv";
+		gentest.PrintToGV(filename);
+
 
 
 		generationNumber++;

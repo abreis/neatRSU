@@ -25,6 +25,8 @@ extern bool gm_debug;
 extern const uint16_t g_inputs;
 extern map<uint16_t,string> g_nodeNames;
 
+extern boost::random::mt19937 rng;
+
 #define d_outputnode g_inputs+1
 #define d_biasnode g_inputs+2
 #define d_firsthidnode g_inputs+3
