@@ -7,6 +7,7 @@ v PrintToGV ignore disabled connections
 x Implement no recurrency at first
 - If a prediction is zero, don't include it in the fitness?
   This could bias evolution towards complex structures though
+- Sort the DBs by NodeID-then-time. Wipe the genome's memory 
 
 Neural
 ------

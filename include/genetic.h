@@ -67,11 +67,11 @@ public:
 	uint16_t	to_node;
 	double		weight = 1.0;
 	bool		enabled = true;
-	uint16_t	innovation;
+	uint16_t	innovation=0;
 
 	ConnectionGene(){};
-	ConnectionGene(uint16_t from, uint16_t to, uint16_t innov, double wweight=1.0)
-		{ from_node = from; to_node = to, innovation = innov; weight=wweight;}
+	ConnectionGene(uint16_t from, uint16_t to, uint16_t innov, double weightin=1.0)
+		{ from_node = from; to_node = to, innovation = innov; weight=weightin;}
 };
 
 
@@ -91,12 +91,24 @@ public:
 	// Set up a new genome with a specific number of inputs.
 	Genome(uint16_t n_inputs);
 
+	/* Essentials
+	 */ 
+	// Adds a new node to the genome. Checks if it already exists. If no ID is specified, finds and increments.
+	uint16_t AddNode(NodeType type, uint16_t id=UINT16_MAX);
+
+	// Add a connection to the Genome. Automatically tracks innovation numbers.
+	// Returns false if the connection already exists. If reenable==true, replaces a disabled connection, if it exists.
+	bool AddConnection(uint16_t from, uint16_t to, bool reenable=false, double inWeight=DBL_MAX);
+
 	// Push a set of inputs through a genome, and return the value of the output node.
 	double Activate(DataEntry entry);
 
 	// Run a complete DB through this genome, compute every prediction, and return fitness.
 	// If store==true, store each prediction in the database at database[i]->prediction;
 	double GetFitness(vector<DataEntry>* database, bool store=false);
+
+	// Wipe the values inside the nodes.
+	void WipeMemory(void);
 
 	/* Mutations
 	 */
@@ -112,9 +124,6 @@ public:
 
 	/* Auxiliary
 	 */
-	// Verify the integrity of the Genome. Returns false if there were inconsistencies.
-	bool Verify(void);
-
 	// Print the contents of this Genome
 	void Print();
 

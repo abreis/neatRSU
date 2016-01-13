@@ -212,15 +212,6 @@ int main(int argc, char *argv[])
 	// Create a genome
 	Genome gentest(g_inputs);
 
-	// Disable all links, add subnodes and sublinks
-	// for(int i=1; i<=g_inputs; i++)
-	// {
-	// 	gentest.connections[make_pair(i,d_outputnode)].enabled=false;
-	// 	gentest.nodes[d_firsthidnode+i-1] = NodeGene(d_firsthidnode+i-1, NodeType::HIDDEN);
-	// 	gentest.connections[make_pair(i,d_firsthidnode+i-1)] = ConnectionGene(i, d_firsthidnode+i-1, g_inputs+2*i-1);
-	// 	gentest.connections[make_pair(d_firsthidnode+i-1,d_outputnode)] = ConnectionGene(d_firsthidnode+i-1, d_outputnode, g_inputs+2*i);
-	// }
-
 	// Perturb the weights
 	gentest.MutatePerturbWeights(rng_gauss);
 

@@ -49,8 +49,64 @@ Genome::Genome(uint16_t n_inputs)
 		n++)
 	{
 		nodes[n] = NodeGene(n, NodeType::SENSOR);
-		connections[make_pair(n,d_outputnode)] = ConnectionGene(n, d_outputnode, n); // Initial innovation matches sensor node ID 
+		this->AddConnection(n, d_outputnode);
 	}
+}
+
+
+uint16_t Genome::AddNode(NodeType type, uint16_t id)
+{
+	if(id==UINT16_MAX)
+	{
+		// Create the next free node
+		id = nodes.rbegin()->first + 1;
+		nodes[id] = NodeGene(id, type);
+		return id;
+	}		
+	else
+	{	
+		// Check if the node already exists.
+		auto iterFindNode = nodes.find(id);
+		if(iterFindNode != nodes.end())
+			{ cout << "ERROR: Tried to add a node that already exists." << endl; exit(1); }
+		// Else create the node.
+		else
+			{ nodes[id] = NodeGene(id, type); return id; }
+	}
+}
+
+
+bool Genome::AddConnection(uint16_t from, uint16_t to, bool reenable, double inWeight)
+{
+	// 01 See if the pair exists.
+	// 02 If it exists, is disabled, and reenable==true, enable the pair and return true. 
+	// 03 If it doesn't exist, create it and return true.
+	// 04 Else return false.
+
+	// 01 See if the pair exists.
+	auto iterFindConn = connections.find(make_pair(from,to));
+	if( iterFindConn != connections.end() )
+	{
+		// 02 If it exists, is disabled, and reenable==true, enable the pair and return true. 
+		if(!iterFindConn->second.enabled and reenable)
+		{
+			iterFindConn->second.enabled = true;
+			// If a weight was specified, replace it too.
+			if(inWeight != DBL_MAX) iterFindConn->second.weight = inWeight;
+			return true;
+		}
+	}
+	// 03 If it doesn't exist, create it and return true.
+	else 
+	{
+		// TODO innovation
+		// Innovation must satisfy initial node creations:
+		// // connections[make_pair(n,d_outputnode)] = ConnectionGene(n, d_outputnode, n); // Initial innovation matches sensor node ID 
+		connections[make_pair(from,to)] = ConnectionGene(from, to, 0,  ( (inWeight==DBL_MAX)?1.0:inWeight )  );
+		return true;
+	}
+	// 04 Else return false.
+	return false;
 }
 
 
@@ -71,9 +127,9 @@ double Genome::Activate(DataEntry data)
 		iterNode++)
 	{
 		iterNode->second.valueLast = iterNode->second.valueNow;
-		iterNode->second.valueNow = 0;
+		iterNode->second.valueNow = 0.0;
 	}
-	nodes[d_biasnode].valueNow = 1; // Don't touch the bias
+	nodes[d_biasnode].valueNow = 1.0; // Don't touch the bias
 
 	// Run through each connection
 	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
@@ -124,8 +180,25 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 }
 
 
+void Genome::WipeMemory(void)
+{
+	// Clean every node's memory.
+	for(map<uint16_t, NodeGene>::iterator 
+		iterNode = nodes.begin();
+		iterNode != nodes.end();
+		iterNode++)
+	{ iterNode->second.valueLast = 0; iterNode->second.valueNow = 0; }
+
+	// Set bias node back to '1'
+	nodes[d_biasnode].valueNow = 1.0;
+	nodes[d_biasnode].valueLast = 1.0;
+}
+
+
 /* Mutations
  */
+
+
 void Genome::MutatePerturbWeights(boost::random::normal_distribution<> randomDistribution)
 {
 	// Go through each connection, perturb its weight.
@@ -137,11 +210,9 @@ void Genome::MutatePerturbWeights(boost::random::normal_distribution<> randomDis
 }
 
 
-// Add a single new connection gene with a specified weight.
-// TODO: needs to be thorougly reviewed.
 void Genome::MutateAddConnection(boost::random::normal_distribution<> randomDistribution)
 {
-	// Get two random nodes. 
+	// Get two random node numbers. 
 	// 'from' can be anything, 'to' must exclude inputs and bias, but not output
 	// We must use a trick here, to be able to pick the output node
 	boost::random::uniform_int_distribution<> randomSrcNode(0, nodes.size()-1);
@@ -150,21 +221,18 @@ void Genome::MutateAddConnection(boost::random::normal_distribution<> randomDist
 	// Try pairs until we find one that either doesn't exist or is disabled
 	map<uint16_t, NodeGene>::const_iterator iterSrcNode, iterDstNode;
 	uint16_t srcNode, dstNode;
-	bool found = false;
+	double newWeight = randomDistribution(rng);
 	do
 	{
-		// Get the source node
+		// Draw a source node. Anything goes.
 		uint16_t randomNodeId = randomSrcNode(rng);
 		iterSrcNode = nodes.begin();
 		advance(iterSrcNode, randomNodeId);
 		srcNode = iterSrcNode->first;
 
-		cout << "Picked source node " << srcNode << endl;
-
-		// Get the destination node. If we draw nodes.size(), select the output node.
+		// Get the destination node. If we draw nodes.size() (which is last+1, invalid), select the output node.
 		randomNodeId = randomDstNode(rng);
-		
-		if(randomNodeId == nodes.size())
+		if(randomNodeId == nodes.size()) 
 			dstNode = d_outputnode;
 		else
 		{
@@ -172,28 +240,19 @@ void Genome::MutateAddConnection(boost::random::normal_distribution<> randomDist
 			advance(iterDstNode, randomNodeId);
 			dstNode = iterDstNode->first;
 		}
-
-	auto iterFindConn = connections.find(make_pair(srcNode,dstNode));
-	if( iterFindConn == connections.end() )
-		found = true;
-	else if( iterFindConn->second.enabled==false )
-		found = true;
-
-	} while( !found );
-
-	// Create the connection
-	// TODO: innovation
-	connections[make_pair(srcNode,dstNode)] = ConnectionGene(srcNode, dstNode, 0, randomDistribution(rng));
+	// Repeat draws until AddConnection reports success
+	} while( not this->AddConnection(srcNode, dstNode, true, newWeight) );
 }
 
-// Split a connection gene into two and add a node in the middle.
-/* An old connection is disabled and two new connections are added to the genome. 
- * The new connection leading into the new node receives a weight of 1, and 
- * the new connection leading out receives the same weight as the old connection. 
- * This method of adding nodes minimizes the initial effect of the mutation.
- */
+
 void Genome::MutateAddNode(void)
 {
+	/* An old connection is disabled and two new connections are added to the genome. 
+	 * The new connection leading into the new node receives a weight of 1, and 
+	 * the new connection leading out receives the same weight as the old connection. 
+	 * This method of adding nodes minimizes the initial effect of the mutation.
+	 */
+
 	// Pick a random connection.
 	// Create a random variable that runs from 0 to #nconnections-1
 	// A [0,n-1] range lets us use std::advance more easily later on
@@ -205,7 +264,6 @@ void Genome::MutateAddNode(void)
 	{
 		// Pull a random number
 		uint16_t rConnId = randomConnection(rng);
-		cout << "DEBUG splitting connection " << rConnId << endl;
 
 		// Get an iterator to the connection
 		iterConnection = connections.begin();
@@ -216,22 +274,11 @@ void Genome::MutateAddNode(void)
 	iterConnection->second.enabled = false;
 
 	// Create a new node
-	uint16_t newNodeId = nodes.rbegin()->first + 1;
-	nodes[newNodeId] = NodeGene(newNodeId, NodeType::HIDDEN);
+	uint16_t newNodeId = this->AddNode(NodeType::HIDDEN);
 
 	// Create connections from and to the new node
-	// TODO: innovation numbers
-	connections[make_pair(iterConnection->second.from_node, newNodeId)] = ConnectionGene(iterConnection->second.from_node, newNodeId, 0);
-	connections[make_pair(newNodeId, iterConnection->second.to_node)] = ConnectionGene(newNodeId, iterConnection->second.to_node, 0, iterConnection->second.weight);
-}
-
-
-bool Genome::Verify(void)
-{	
-	// Every connection must point to a valid node ID
-	// TODO
-
-	return true; 
+	this->AddConnection(iterConnection->second.from_node, newNodeId);
+	this->AddConnection(newNodeId, iterConnection->second.to_node, false, iterConnection->second.weight);	
 }
 
 
@@ -322,13 +369,6 @@ void Genome::PrintToGV(string filename)
 
 	// Hidden nodes
 	gvout << "\tnode [shape=circle,style=filled,fillcolor=white,fontcolor=black];\n";
-	// for(map<uint16_t, NodeGene>::const_iterator 
-	// 	iterNode = nodes.begin();
-	// 	iterNode != nodes.end();
-	// 	iterNode++)
-	// 		if(iterNode->second.type==NodeType::HIDDEN)
-	// 		gvout << ' ' << iterNode->first;
-	// gvout << ";\n";
 
 	// Output connections
 	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
