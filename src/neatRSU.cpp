@@ -203,31 +203,26 @@ int main(int argc, char *argv[])
 	firstSpecies.genomes.push_back(firstGenome);
 	population.species.push_back(firstSpecies);
 
-	// // TODO test
-	// string outfile = "testgv.gv";
-	// Genome gentest(g_inputs);
-	// gentest.connections[make_pair(1,d_outputnode)].enabled=false;
-	// gentest.nodes[d_firsthidnode] = NodeGene(g_inputs, NodeType::HIDDEN);
-	// gentest.connections[make_pair(1,d_firsthidnode)] = ConnectionGene(1, d_firsthidnode, g_inputs+1);
-	// gentest.connections[make_pair(d_firsthidnode,d_outputnode)] = ConnectionGene(d_firsthidnode, d_outputnode, g_inputs+2);
-	// gentest.connections[make_pair(d_biasnode,d_firsthidnode)] = ConnectionGene(d_biasnode, d_firsthidnode, g_inputs+3);
-	// gentest.PrintToGV(gentest, outfile);
 
 	/***
 	 *** C0 Loop evolution until criteria match
 	 ***/
 
+
 	// Create a genome
 	Genome gentest(g_inputs);
 
 	// Disable all links, add subnodes and sublinks
-	for(int i=1; i<=g_inputs; i++)
-	{
-		gentest.connections[make_pair(i,d_outputnode)].enabled=false;
-		gentest.nodes[d_firsthidnode+i-1] = NodeGene(d_firsthidnode+i-1, NodeType::HIDDEN);
-		gentest.connections[make_pair(i,d_firsthidnode+i-1)] = ConnectionGene(i, d_firsthidnode+i-1, g_inputs+2*i-1);
-		gentest.connections[make_pair(d_firsthidnode+i-1,d_outputnode)] = ConnectionGene(d_firsthidnode+i-1, d_outputnode, g_inputs+2*i);
-	}
+	// for(int i=1; i<=g_inputs; i++)
+	// {
+	// 	gentest.connections[make_pair(i,d_outputnode)].enabled=false;
+	// 	gentest.nodes[d_firsthidnode+i-1] = NodeGene(d_firsthidnode+i-1, NodeType::HIDDEN);
+	// 	gentest.connections[make_pair(i,d_firsthidnode+i-1)] = ConnectionGene(i, d_firsthidnode+i-1, g_inputs+2*i-1);
+	// 	gentest.connections[make_pair(d_firsthidnode+i-1,d_outputnode)] = ConnectionGene(d_firsthidnode+i-1, d_outputnode, g_inputs+2*i);
+	// }
+
+	// Perturb the weights
+	gentest.MutatePerturbWeights(rng_gauss);
 
 	gentest.PrintToGV("gentest.gv");
 
@@ -235,16 +230,17 @@ int main(int argc, char *argv[])
 	uint32_t generationNumber = 0;
 	do
 	{
-
-
 		// Push a DataEntry through it
 		// cout << "Activation " << generationNumber << ": " << gentest.Activate( *(TrainingDB.begin()+generationNumber) ) << endl;
 
 		// Push the whole DB through
 		cout << "Activation " << generationNumber << ", fitness: " << gentest.GetFitness(&TrainingDB) << endl;
 
-		// Perturb the weights
-		gentest.MutatePerturbWeights(rng_gauss);
+		// Mutate add node
+		gentest.MutateAddNode();
+
+		// Mutate add connection
+		gentest.MutateAddConnection(rng_gauss);
 
 		// Print
 		string filename = "gentest" + to_string(generationNumber) + ".gv";

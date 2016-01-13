@@ -70,8 +70,8 @@ public:
 	uint16_t	innovation;
 
 	ConnectionGene(){};
-	ConnectionGene(uint16_t in, uint16_t out, uint16_t innov)
-		{ from_node = in; to_node = out, innovation = innov; }
+	ConnectionGene(uint16_t from, uint16_t to, uint16_t innov, double wweight=1.0)
+		{ from_node = from; to_node = to, innovation = innov; weight=wweight;}
 };
 
 
@@ -103,8 +103,8 @@ public:
 	// Add a random value to the weights of this genome.
 	void MutatePerturbWeights(boost::random::normal_distribution<> randomDistribution);
 
-	// Add a single new connection gene with a specified weight.
-	void MutateAddConnection(double weight);
+	// Add a single new connection gene with a random weight.
+	void MutateAddConnection(boost::random::normal_distribution<> randomDistribution);
 
 	// Split a connection gene into two and add a node in the middle.
 	void MutateAddNode(void);

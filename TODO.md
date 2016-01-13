@@ -17,13 +17,17 @@ v Run a DB through a genome and fill its predicted time-to-contact field
    instead of storing everything in the database and then evaluating.
 v Apply a single data entry through a Genome and get the output (Activation)
 
-v- Single node evolution
-2- Fixed-size species evolution
-3- Weight mutations
-4- Structural mutations
-5- Crossovers
-6- Structural differences for speciation
+v Single node evolution
+- Fixed-size species evolution
+v Weight mutations
+v Structural mutations - AddNode
+- Structural mutations - AddConnection
+- Innovation numbers
+- Crossovers
+- Structural differences for speciation
 
+- Keep track of the best genome across each species every generation
+- Print the best genome across all species each generation, identify its species (to see jumps to a different species)
 
 - Go through a DB and evaluate the goodness-of-fit from real contact to estimated contact time. (?)
 

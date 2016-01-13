@@ -138,9 +138,52 @@ void Genome::MutatePerturbWeights(boost::random::normal_distribution<> randomDis
 
 
 // Add a single new connection gene with a specified weight.
-void Genome::MutateAddConnection(double weight)
+// TODO: needs to be thorougly reviewed.
+void Genome::MutateAddConnection(boost::random::normal_distribution<> randomDistribution)
 {
+	// Get two random nodes. 
+	// 'from' can be anything, 'to' must exclude inputs and bias, but not output
+	// We must use a trick here, to be able to pick the output node
+	boost::random::uniform_int_distribution<> randomSrcNode(0, nodes.size()-1);
+	boost::random::uniform_int_distribution<> randomDstNode(d_firsthidnode, nodes.size());
+	
+	// Try pairs until we find one that either doesn't exist or is disabled
+	map<uint16_t, NodeGene>::const_iterator iterSrcNode, iterDstNode;
+	uint16_t srcNode, dstNode;
+	bool found = false;
+	do
+	{
+		// Get the source node
+		uint16_t randomNodeId = randomSrcNode(rng);
+		iterSrcNode = nodes.begin();
+		advance(iterSrcNode, randomNodeId);
+		srcNode = iterSrcNode->first;
 
+		cout << "Picked source node " << srcNode << endl;
+
+		// Get the destination node. If we draw nodes.size(), select the output node.
+		randomNodeId = randomDstNode(rng);
+		
+		if(randomNodeId == nodes.size())
+			dstNode = d_outputnode;
+		else
+		{
+			iterDstNode = nodes.begin();
+			advance(iterDstNode, randomNodeId);
+			dstNode = iterDstNode->first;
+		}
+
+	auto iterFindConn = connections.find(make_pair(srcNode,dstNode));
+	if( iterFindConn == connections.end() )
+		found = true;
+	else if( iterFindConn->second.enabled==false )
+		found = true;
+
+	} while( !found );
+
+	// Create the connection
+	// TODO: innovation
+	connections[make_pair(srcNode,dstNode)] = ConnectionGene(srcNode, dstNode, 0, randomDistribution(rng));
 }
 
 // Split a connection gene into two and add a node in the middle.
@@ -151,7 +194,35 @@ void Genome::MutateAddConnection(double weight)
  */
 void Genome::MutateAddNode(void)
 {
+	// Pick a random connection.
+	// Create a random variable that runs from 0 to #nconnections-1
+	// A [0,n-1] range lets us use std::advance more easily later on
+	boost::random::uniform_int_distribution<> randomConnection(0, connections.size()-1);
 
+	// Get a connection that isn't disabled
+	map<pair<uint16_t,uint16_t>, ConnectionGene>::iterator iterConnection;
+	do
+	{
+		// Pull a random number
+		uint16_t rConnId = randomConnection(rng);
+		cout << "DEBUG splitting connection " << rConnId << endl;
+
+		// Get an iterator to the connection
+		iterConnection = connections.begin();
+		advance(iterConnection, rConnId);
+	} while (iterConnection->second.enabled != true);
+
+	// Disable it
+	iterConnection->second.enabled = false;
+
+	// Create a new node
+	uint16_t newNodeId = nodes.rbegin()->first + 1;
+	nodes[newNodeId] = NodeGene(newNodeId, NodeType::HIDDEN);
+
+	// Create connections from and to the new node
+	// TODO: innovation numbers
+	connections[make_pair(iterConnection->second.from_node, newNodeId)] = ConnectionGene(iterConnection->second.from_node, newNodeId, 0);
+	connections[make_pair(newNodeId, iterConnection->second.to_node)] = ConnectionGene(newNodeId, iterConnection->second.to_node, 0, iterConnection->second.weight);
 }
 
 
@@ -250,14 +321,14 @@ void Genome::PrintToGV(string filename)
 			<< ' ' << g_nodeNames[d_biasnode] << ";\n";
 
 	// Hidden nodes
-	gvout << "\tnode [shape=circle,style=filled,fillcolor=white,fontcolor=black];";
-	for(map<uint16_t, NodeGene>::const_iterator 
-		iterNode = nodes.begin();
-		iterNode != nodes.end();
-		iterNode++)
-			if(iterNode->second.type==NodeType::HIDDEN)
-			gvout << ' ' << iterNode->first;
-	gvout << ";\n";
+	gvout << "\tnode [shape=circle,style=filled,fillcolor=white,fontcolor=black];\n";
+	// for(map<uint16_t, NodeGene>::const_iterator 
+	// 	iterNode = nodes.begin();
+	// 	iterNode != nodes.end();
+	// 	iterNode++)
+	// 		if(iterNode->second.type==NodeType::HIDDEN)
+	// 		gvout << ' ' << iterNode->first;
+	// gvout << ";\n";
 
 	// Output connections
 	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
