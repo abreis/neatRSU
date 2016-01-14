@@ -60,13 +60,13 @@ int main(int argc, char *argv[])
 	uint32_t 	m_genmax			= 1;
 	uint16_t 	m_maxPop			= 150;
 
-	float 	m_p_mutate_weights 			= 0.80;
+	// Non-CLI-configurable options
 	float 	m_p_weight_perturb_or_new 	= 0.90;
 	float	m_p_inherit_disabled		= 0.75;
 
-	// Non-CLI-configurable options
-	float 	m_p_mutate_addnode		= 0.03;
-	float 	m_p_mutate_addconn		= 0.05; // use 0.30 for large population size
+	float 	m_p_mutate_weights 			= 0.80;
+	float 	m_p_mutate_addnode			= 0.03;
+	float 	m_p_mutate_addconn			= 0.05; // use 0.30 for large population size
 	// float	m_survival				= 0.20;
 
 	// List of command line options
@@ -229,74 +229,52 @@ int main(int argc, char *argv[])
 	 ***/
 
 
-	// uint32_t generationNumber = 0;
-	// do
-	// {
-	// 	// Go through each species
-	// 	for(vector<Species>::iterator 
-	// 		iterSpecies = population.species.begin();
-	// 		iterSpecies != population.species.end();
-	// 		iterSpecies++)
-	// 	{
-	// 		// Go through each genome in this species
-	// 		for(vector<Genome>::iterator
-	// 			iterGenome = iterSpecies->genomes.begin();
-	// 			iterGenome != iterSpecies->genomes.end();
-	// 			iterGenome++)
-	// 		{
-	// 			// Mutate Perturb Weights?
-	// 			// Mutate Add Node?
-	// 			// Mutate Add Connection?
+	uint32_t generationNumber = 0;
+	do
+	{
+		// Go through each species
+		for(vector<Species>::iterator 
+			iterSpecies = population.species.begin();
+			iterSpecies != population.species.end();
+			iterSpecies++)
+		{
+			// Go through each genome in this species
+			for(vector<Genome>::iterator
+				iterGenome = iterSpecies->genomes.begin();
+				iterGenome != iterSpecies->genomes.end();
+				iterGenome++)
+			{
+				// TODO: clone genome, mutate clone, push clone to species?
 
-	// 		} // END GENOME ITERATION
+				// Mutate Perturb Weights?
+				if(OneShotBernoulli(m_p_mutate_weights))
+					iterGenome->MutatePerturbWeights();
 
-	// 		// Perform intra-species mating
+				// Mutate Add Node?
+				if(OneShotBernoulli(m_p_mutate_addnode));
+					iterGenome->MutateAddNode();
 
-	// 	} // END SPECIES ITERATION
+				// Mutate Add Connection?
+				if(OneShotBernoulli(m_p_mutate_addconn));
+					iterGenome->MutateAddConnection();
+
+			} // END GENOME ITERATION
+
+			// Perform intra-species mating
+
+		} // END SPECIES ITERATION
 
 
-	// /* Generation end post-processing
-	//  */
+	/* Generation end post-processing
+	 */
 
 
-	// // Generation loop control
-	// generationNumber++;
-	// } while( generationNumber < m_genmax );	// Specify stopping criteria here
+	// Generation loop control
+	generationNumber++;
+	} while( generationNumber < m_genmax );	// Specify stopping criteria here
 
 
-	// Test: create two genomes and mate them
-	Genome gen1(g_inputs);
-	Genome gen2(g_inputs);
 
-	// Mutate them a bit
-	gen1.MutatePerturbWeights();
-	gen1.MutateAddNode();
-	gen1.MutateAddConnection();
-	gen1.MutateAddNode();
-
-	gen2.MutatePerturbWeights();
-	gen2.MutateAddNode();
-	gen2.MutateAddConnection();
-	gen2.MutateAddNode();
-	gen2.MutateAddConnection();
-	gen2.MutateAddNode();
-
-	gen1.fitness = gen1.GetFitness(&TrainingDB);
-	gen2.fitness = gen2.GetFitness(&TrainingDB);
-
-	Genome gen3 = MateGenomes(&gen1, &gen2);
-
-	cout << "\nFirst parent\n";
-	gen1.Print();
-	gen1.PrintToGV("gen1.gv");
-
-	cout << "\nSecond parent\n";
-	gen2.Print();
-	gen2.PrintToGV("gen2.gv");
-
-	cout << "\nOffspring\n";
-	gen3.Print();
-	gen3.PrintToGV("gen3.gv");
 
 	/***
 	 *** Z0 Wrap up
@@ -330,3 +308,40 @@ bool OneShotBernoulli(float probability)
 // // Print
 // string filename = "gentest" + to_string(generationNumber) + ".gv";
 // gentest.PrintToGV(filename);
+
+
+
+
+// // Test: create two genomes and mate them
+// Genome gen1(g_inputs);
+// Genome gen2(g_inputs);
+
+// // Mutate them a bit
+// gen1.MutatePerturbWeights();
+// gen1.MutateAddNode();
+// gen1.MutateAddConnection();
+// gen1.MutateAddNode();
+
+// gen2.MutatePerturbWeights();
+// gen2.MutateAddNode();
+// gen2.MutateAddConnection();
+// gen2.MutateAddNode();
+// gen2.MutateAddConnection();
+// gen2.MutateAddNode();
+
+// gen1.fitness = gen1.GetFitness(&TrainingDB);
+// gen2.fitness = gen2.GetFitness(&TrainingDB);
+
+// Genome gen3 = MateGenomes(&gen1, &gen2);
+
+// cout << "\nFirst parent\n";
+// gen1.Print();
+// gen1.PrintToGV("gen1.gv");
+
+// cout << "\nSecond parent\n";
+// gen2.Print();
+// gen2.PrintToGV("gen2.gv");
+
+// cout << "\nOffspring\n";
+// gen3.Print();
+// gen3.PrintToGV("gen3.gv");

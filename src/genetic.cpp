@@ -190,8 +190,14 @@ double Compatibility(Genome* const gen1, Genome* const gen2)
  */
 
 
+Genome::Genome(){}
+
+
 Genome::Genome(uint16_t n_inputs)
 {
+	// Assign a random ID.
+	// genomeID = ( ( (uint64_t)g_rng() ) << 32 ) | g_rng();
+
 	// Add an output node. Output node ID will always be #inputs+1
 	nodes[d_outputnode] = NodeGene(d_outputnode, NodeType::OUTPUT);
 

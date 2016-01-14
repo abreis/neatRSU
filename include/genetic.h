@@ -27,10 +27,9 @@ double ActivationSigmoid (double input);
 // Output transfer function.
 double ActivationOutput (double input);
 
-class Genome;
-
 // Mates two genomes and returns the resulting offspring.
 // Uses each genome's fitness, so be sure it is up to date.
+class Genome;
 Genome MateGenomes(Genome* const firstParent, Genome* const secondParent);
 
 // Get the measure of compatibility between two nodes
@@ -97,11 +96,13 @@ public:
 	// The current fitness of this genome
 	uint32_t fitness = 0;
 
+	// A unique random identifier for this genome.
+	uint64_t genomeID = 0; 
 
 	/* Essentials
 	 */ 
-	// A blank genome, for copies and mating.
-	Genome(){};
+	// A blank genome, for copies and mating, with a random ID.
+	Genome();
 
 	// Set up a new genome with a specific number of inputs.
 	Genome(uint16_t n_inputs);
