@@ -25,13 +25,16 @@ extern bool gm_debug;
 extern const uint16_t g_inputs;
 extern map<uint16_t,string> g_nodeNames;
 
+extern float gm_compat_excess;
+extern float gm_compat_disjoint; 
+extern float gm_compat_weight; 
+
 extern boost::random::mt19937 					g_rng;
 extern boost::random::bernoulli_distribution<> 	g_rnd_5050;
 extern boost::random::bernoulli_distribution<> 	g_rnd_mutWeights;
 extern boost::random::bernoulli_distribution<> 	g_rnd_addConn;
 extern boost::random::bernoulli_distribution<> 	g_rnd_addNode;
 extern boost::random::bernoulli_distribution<> 	g_rnd_inheritDisabled;
-
 extern boost::random::normal_distribution<> 	g_rnd_gauss;
 
 #define d_outputnode g_inputs+1

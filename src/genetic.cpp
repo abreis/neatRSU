@@ -27,6 +27,165 @@ double ActivationOutput (double input)
 }
 
 
+Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
+{
+	Genome offspring;
+
+	/* Perform the crossover.
+	 * Matching ConnectionGenes are copied over, if both enabled.
+	 * If one is enabled and the other isn't, copy occurs based on probability TODO
+	 * Excess genes are copied from the most fit parent.
+	 */
+
+	// Find the most fit parent and iterate its ConnectionGenes.
+	// Less fitness is more fit.
+	Genome* mostFitGenome; Genome* leastFitGenome; 
+	if(firstParent->fitness < secondParent->fitness)
+		{ mostFitGenome = firstParent; leastFitGenome = secondParent; }
+	else
+		{ mostFitGenome = secondParent; leastFitGenome = firstParent; }
+
+	// Run through most fit parent's ConnectionGenes
+	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator
+		iterGenesOnMostFit = mostFitGenome->connections.begin();
+		iterGenesOnMostFit != mostFitGenome->connections.end();
+		iterGenesOnMostFit++)
+	{
+		// Find this ConnectionGene on the leastFitGenome
+		auto iterGeneOnLeastFit = leastFitGenome->connections.find(iterGenesOnMostFit->first);
+		if(iterGeneOnLeastFit == leastFitGenome->connections.end())
+		{
+			// The other Genome doesn't have it, use ours *even* if it's disabled.
+			// if(iterGenesOnMostFit->second.enabled)
+			offspring.connections[iterGenesOnMostFit->first] = iterGenesOnMostFit->second;
+		}
+		else
+		{
+			// The other Genome has it too, see if they're both disabled
+			if(!iterGenesOnMostFit->second.enabled and !iterGeneOnLeastFit->second.enabled)		
+			{
+				// Both are disabled, copy ours.
+				offspring.connections[iterGenesOnMostFit->first] = iterGenesOnMostFit->second;
+			}
+			else
+			{
+				// Key of the new ConnectionGene (should be the same on mostFit, leastFit, and offspring)
+				pair<uint16_t,uint16_t> geneKey = iterGenesOnMostFit->first;
+				assert(geneKey == iterGeneOnLeastFit->first); // TODO remove
+
+				// Either (or both) are enabled, so do the copy 50/50
+				if(g_rnd_5050(g_rng))
+					// Take from the mostFitGenome
+					offspring.connections[geneKey] = iterGenesOnMostFit->second;
+				else
+					// Take from the leastFitGenome
+					offspring.connections[geneKey] = iterGeneOnLeastFit->second;
+				
+				// Finally, if one or the other were disabled, randomly decide if the gene will be enabled or disabled.
+				if( !iterGenesOnMostFit->second.enabled or !iterGeneOnLeastFit->second.enabled )
+				{
+					if(g_rnd_inheritDisabled(g_rng))
+						offspring.connections[geneKey].enabled = true;
+					else
+						offspring.connections[geneKey].enabled = false;
+				}
+			}
+
+		}
+	}
+
+	// Now add all necessary nodes
+	offspring.nodes = mostFitGenome->nodes;
+
+	return offspring;
+}
+
+
+double Compatibility(Genome* const gen1, Genome* const gen2)
+{
+	double excessGenes = 0.0;
+	double disjointGenes = 0.0;
+	double totalWeightDifference = 0.0;
+	double matchingGenes = 0.0;
+
+	// Find N, the #genes in the larger genome
+	uint16_t genesInLargerGenome = max(gen1->connections.size(), gen2->connections.size());
+
+	// Count disjoint and excess genes. Uses innovation.
+
+	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator iterGen1 = gen1->connections.begin();
+	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator iterGen2 = gen2->connections.begin();
+
+	// Loop until both iterators are at the end
+	while( !(iterGen1==gen1->connections.end()) or !(iterGen2==gen2->connections.end()) )
+	{
+		// TODO: are we sure that the connection vector is always ordered w.r.t. innovation? 
+		if( iterGen1==gen1->connections.end() )
+		{
+			// Gen1 ended, but Gen2 didn't (or the while() would have stopped),
+			// so we're in excessGenes territory.
+			iterGen2++;
+			excessGenes++;
+		}
+		else if( iterGen2==gen2->connections.end() )
+		{
+			// Gen2 ended, but Gen1 didn't
+			iterGen1++;
+			excessGenes++;
+		}
+		else
+		{
+			// We're somewhere in the middle.
+			// Get innovation numbers
+			uint16_t gen1innov = iterGen1->second.innovation;
+			uint16_t gen2innov = iterGen1->second.innovation;
+
+			// If the current pair matches, process both genes, increment both iterators
+			if(gen1innov == gen2innov)
+			{
+				// Count how many genes match, for the weight difference.
+				matchingGenes++;
+
+				// Get absolute weight difference, add it to total.
+				totalWeightDifference += fabs(iterGen1->second.weight - iterGen2->second.weight);
+
+				iterGen1++; iterGen2++;
+			} 
+			else if(gen1innov > gen2innov)
+			{
+				// Gen2 iterator is behind Gen1 iterator in innovation.
+				// Move Gen2 forward, count as disjoint.
+				iterGen2++;
+				disjointGenes++;
+
+			}
+			else if(gen1innov < gen2innov)
+			{
+				// Gen1 iterator is behind Gen2 iterator in innovation.
+				// Move Gen1 forward, count as disjoint.
+				iterGen1++;
+				disjointGenes++;
+			}
+			else exit(1); // should never get here
+
+		}
+	}
+
+
+	// Average out weight differences
+	double averageWeightDifference = totalWeightDifference/matchingGenes;
+
+	// To stop normalization for gene size (recommended for small genomes (<20 genes)), uncomment:
+	// genesInLargerGenome = 1.0;
+
+	return 
+		( ( gm_compat_excess*excessGenes )/genesInLargerGenome 
+		+ ( gm_compat_disjoint*disjointGenes )/genesInLargerGenome 
+		+ gm_compat_weight*averageWeightDifference
+		);
+}
+
+
 /* CLASS Genome
  */
 
@@ -297,6 +456,18 @@ void Genome::MutateAddNode(void)
  */
 
 
+uint16_t Genome::CountEnabledGenes(void)
+{
+	uint16_t count = 0;
+	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+		iterConn = connections.begin();
+		iterConn != connections.end();
+		iterConn++)
+		if(iterConn->second.enabled) count++;
+	return count;
+}
+
+
 void Genome::Print()
 {
 	// Print a list of nodes
@@ -316,11 +487,11 @@ void Genome::Print()
 		cout << "----"; cout << '\n';
 
 	// Print each node's values
-	for(map<uint16_t, NodeGene>::const_iterator 
-		iterNode = nodes.begin();
-		iterNode != nodes.end();
-		iterNode++)
-		cout << iterNode->first << '\t' << iterNode->second.valueLast << '\t' << iterNode->second.valueNow << '\n';
+	// for(map<uint16_t, NodeGene>::const_iterator 
+	// 	iterNode = nodes.begin();
+	// 	iterNode != nodes.end();
+	// 	iterNode++)
+	// 	cout << iterNode->first << '\t' << iterNode->second.valueLast << '\t' << iterNode->second.valueNow << '\n';
 
 	// Print a list of connections
 	cout 	<< "-------------------------------------" << '\n'
@@ -398,78 +569,4 @@ void Genome::PrintToGV(string filename)
 	// Close file
 	gvout << "}\n";
 	gvout.close();
-}
-
-
-Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
-{
-	Genome offspring;
-
-	/* Perform the crossover.
-	 * Matching ConnectionGenes are copied over, if both enabled.
-	 * If one is enabled and the other isn't, copy occurs based on probability TODO
-	 * Excess genes are copied from the most fit parent.
-	 */
-
-	// Find the most fit parent and iterate its ConnectionGenes.
-	// Less fitness is more fit.
-	Genome* mostFitGenome; Genome* leastFitGenome; 
-	if(firstParent->fitness < secondParent->fitness)
-		{ mostFitGenome = firstParent; leastFitGenome = secondParent; }
-	else
-		{ mostFitGenome = secondParent; leastFitGenome = firstParent; }
-
-	// Run through most fit parent's ConnectionGenes
-	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator
-		iterGenesOnMostFit = mostFitGenome->connections.begin();
-		iterGenesOnMostFit != mostFitGenome->connections.end();
-		iterGenesOnMostFit++)
-	{
-		// Find this ConnectionGene on the leastFitGenome
-		auto iterGeneOnLeastFit = leastFitGenome->connections.find(iterGenesOnMostFit->first);
-		if(iterGeneOnLeastFit == leastFitGenome->connections.end())
-		{
-			// The other Genome doesn't have it, use ours *even* if it's disabled.
-			// if(iterGenesOnMostFit->second.enabled)
-			offspring.connections[iterGenesOnMostFit->first] = iterGenesOnMostFit->second;
-		}
-		else
-		{
-			// The other Genome has it too, see if they're both disabled
-			if(!iterGenesOnMostFit->second.enabled and !iterGeneOnLeastFit->second.enabled)		
-			{
-				// Both are disabled, copy ours.
-				offspring.connections[iterGenesOnMostFit->first] = iterGenesOnMostFit->second;
-			}
-			else
-			{
-				// Key of the new ConnectionGene (should be the same on mostFit, leastFit, and offspring)
-				pair<uint16_t,uint16_t> geneKey = iterGenesOnMostFit->first;
-				assert(geneKey == iterGeneOnLeastFit->first); // TODO remove
-
-				// Either (or both) are enabled, so do the copy 50/50
-				if(g_rnd_5050(g_rng))
-					// Take from the mostFitGenome
-					offspring.connections[geneKey] = iterGenesOnMostFit->second;
-				else
-					// Take from the leastFitGenome
-					offspring.connections[geneKey] = iterGeneOnLeastFit->second;
-				
-				// Finally, if one or the other were disabled, randomly decide if the gene will be enabled or disabled.
-				if( !iterGenesOnMostFit->second.enabled or !iterGeneOnLeastFit->second.enabled )
-				{
-					if(g_rnd_inheritDisabled(g_rng))
-						offspring.connections[geneKey].enabled = true;
-					else
-						offspring.connections[geneKey].enabled = false;
-				}
-			}
-
-		}
-	}
-
-	// Now add all necessary nodes
-	offspring.nodes = mostFitGenome->nodes;
-
-	return offspring;
 }

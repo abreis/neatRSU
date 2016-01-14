@@ -27,6 +27,15 @@ double ActivationSigmoid (double input);
 // Output transfer function.
 double ActivationOutput (double input);
 
+class Genome;
+
+// Mates two genomes and returns the resulting offspring.
+// Uses each genome's fitness, so be sure it is up to date.
+Genome MateGenomes(Genome* const firstParent, Genome* const secondParent);
+
+// Get the measure of compatibility between two nodes
+double Compatibility(Genome* const gen1, Genome* const gen2);
+
 
 
 /* Classes and Structs
@@ -114,7 +123,6 @@ public:
 	// Wipe the values inside the nodes.
 	void WipeMemory(void);
 
-
 	/* Mutations
 	 */
 	// Add a random value to the weights of this genome.
@@ -129,6 +137,9 @@ public:
 
 	/* Auxiliary
 	 */
+	// Count the number of ConnectionGenes that are not disabled.
+	uint16_t CountEnabledGenes(void);
+
 	// Print the contents of this Genome
 	void Print();
 
@@ -136,10 +147,6 @@ public:
 	void PrintToGV(string filename);
 };
 
-
-// Mates two genomes and returns the resulting offspring.
-// Uses each genome's fitness, so be sure it is up to date.
-Genome MateGenomes(Genome* const firstParent, Genome* const secondParent);
 
 
 // A species, a collection of genomes.

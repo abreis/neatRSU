@@ -22,8 +22,11 @@ map<uint16_t,string> g_nodeNames =
 	{8, "bias"}
 };
 
-boost::random::mt19937 						g_rng;
+float gm_compat_excess 	= 1.0;
+float gm_compat_disjoint = 1.0;
+float gm_compat_weight 	= 0.4;	// flip to 3.0 for a larger population (e.g. 1000)
 
+boost::random::mt19937 						g_rng;
 boost::random::bernoulli_distribution<> 	g_rnd_5050;
 boost::random::bernoulli_distribution<> 	g_rnd_mutWeights;
 boost::random::bernoulli_distribution<> 	g_rnd_addConn;
@@ -53,10 +56,12 @@ int main(int argc, char *argv[])
 	 */
 
 	// Defaults
-	string 	m_traindata		= "";
-	string 	m_testdata 		= "";
-	int 	m_seed			= 0;
-	uint32_t m_genmax		= 1;
+	string 		m_traindata			= "";
+	string 		m_testdata 			= "";
+	int 		m_seed				= 0;
+	uint32_t 	m_genmax			= 1;
+	uint16_t 	m_maxPop			= 150;
+
 
 	// Non-CLI-configurable options
 	float 	m_p_mutate_addweight	= 0.50;
@@ -72,6 +77,10 @@ int main(int argc, char *argv[])
 		("test-data", 	boost::program_options::value<string>(), 	"location of test data CSV")
 		("seed", 		boost::program_options::value<int>(), 		"random number generator seed")
 		("generations", boost::program_options::value<uint32_t>(),	"number of generations to perform")
+		("population-size", 	boost::program_options::value<uint16_t>(),	"maximum population size")
+		("compat-excess",		boost::program_options::value<float>(),		"compatibility weight c1")
+		("compat-disjoint",		boost::program_options::value<float>(),		"compatibility weight c2")
+		("compat-weight",		boost::program_options::value<float>(),		"compatibility weight c3")
 	    ("debug", 													"enable debug mode")
 	    ("help", 													"give this help list")
 	;
@@ -89,6 +98,10 @@ int main(int argc, char *argv[])
 	if (varMap.count("test-data"))				m_testdata		= varMap["test-data"].as<string>();
 	if (varMap.count("seed"))					m_seed			= varMap["seed"].as<int>();
 	if (varMap.count("generations"))			m_genmax		= varMap["generations"].as<uint32_t>();
+	if (varMap.count("population-size"))		m_maxPop			= varMap["population-size"].as<uint16_t>();
+	if (varMap.count("compat-excess"))			gm_compat_excess 	= varMap["compat-excess"].as<float>();
+	if (varMap.count("compat-disjoint"))		gm_compat_disjoint 	= varMap["compat-disjoint"].as<float>();
+	if (varMap.count("compat-weight"))			gm_compat_weight 	= varMap["compat-weight"].as<float>();
 	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
 
 
