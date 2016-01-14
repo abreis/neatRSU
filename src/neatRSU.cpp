@@ -63,11 +63,10 @@ int main(int argc, char *argv[])
 	// Non-CLI-configurable options
 	float 	m_p_weight_perturb_or_new 	= 0.90;
 	float	m_p_inherit_disabled		= 0.75;
-
 	float 	m_p_mutate_weights 			= 0.80;
 	float 	m_p_mutate_addnode			= 0.03;
 	float 	m_p_mutate_addconn			= 0.05; // use 0.30 for large population size
-	// float	m_survival				= 0.20;
+	float	m_survival_threshold		= 0.20;
 
 	// List of command line options
 	boost::program_options::options_description cliOptDesc("Options");
@@ -251,16 +250,32 @@ int main(int argc, char *argv[])
 					iterGenome->MutatePerturbWeights();
 
 				// Mutate Add Node?
-				if(OneShotBernoulli(m_p_mutate_addnode));
+				if(OneShotBernoulli(m_p_mutate_addnode))
 					iterGenome->MutateAddNode();
 
 				// Mutate Add Connection?
-				if(OneShotBernoulli(m_p_mutate_addconn));
+				if(OneShotBernoulli(m_p_mutate_addconn))
 					iterGenome->MutateAddConnection();
 
 			} // END GENOME ITERATION
 
-			// Perform intra-species mating
+			// TODO compute the fitness and adjusted fitness of each Genome
+
+			// Determine how many offspring we can have
+			// TODO use a ratio of sum(adjustedFitness)
+			// May need to do a separate Species cycle where all the fitness is known.
+			// TODO fitness is "lowest is best", so the smallest sum of fitness is the best species
+			uint16_t speciesPopulation = m_maxPop * 1;
+
+			/* TODO Eliminate the lowest performing members from the population.
+			 */
+			// Sort the vector of Genomes by fitness.
+			sort(iterSpecies->genomes.begin(), iterSpecies->genomes.end());
+
+			// TODO Perform intra-species mating
+
+			// "The entire population is then replaced by the offspring of the remaining organisms in each species."
+
 
 		} // END SPECIES ITERATION
 

@@ -399,6 +399,10 @@ void Genome::MutateAddConnection(void)
 	boost::random::uniform_int_distribution<> randomSrcNode(0, nodes.size()-1);
 	boost::random::uniform_int_distribution<> randomDstNode(d_firsthidnode, nodes.size());
 	
+	// This could fail on the (unlikely) event that the network is fully connected, so we limit
+	// the number of tries.
+	uint8_t max_tries = 50;
+
 	// Try pairs until we find one that either doesn't exist or is disabled
 	map<uint16_t, NodeGene>::const_iterator iterSrcNode, iterDstNode;
 	uint16_t srcNode, dstNode;
@@ -421,8 +425,8 @@ void Genome::MutateAddConnection(void)
 			advance(iterDstNode, randomNodeId);
 			dstNode = iterDstNode->first;
 		}
-	// Repeat draws until AddConnection reports success
-	} while( not this->AddConnection(srcNode, dstNode, true, newWeight) );
+	// Repeat draws until AddConnection reports success or we hit max_tries
+	} while( ( not this->AddConnection(srcNode, dstNode, true, newWeight)) and (--max_tries > 0) );
 }
 
 

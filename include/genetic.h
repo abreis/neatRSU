@@ -93,8 +93,9 @@ public:
 	// List of connections. We use the from->to nodeIDs as keys
 	map<pair<uint16_t,uint16_t>, ConnectionGene> connections;
 
-	// The current fitness of this genome
+	// The current fitness and adjusted fitness of this genome
 	uint32_t fitness = 0;
+	uint32_t adjFitness = 0;
 
 	// A unique random identifier for this genome.
 	uint64_t genomeID = 0; 
@@ -146,6 +147,10 @@ public:
 
 	// Print the contents of this Genome as Graphviz language to a file
 	void PrintToGV(string filename);
+
+	// Sorting performed by fitness (lowest value to highest -> highest fitness to lowest)
+	bool operator < (const Genome& gen) const
+		{ return (fitness < gen.fitness); }
 };
 
 
