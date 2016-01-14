@@ -153,6 +153,9 @@ public:
 class Species
 {
 public:
+	double maximumFitness = DBL_MAX;
+	uint16_t generationsSinceLastImprovement=0;
+
 	vector<Genome> genomes;
 };
 

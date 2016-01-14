@@ -24,8 +24,11 @@ v Structural mutations - AddNode
 v Structural mutations - AddConnection
 v Innovation numbers
 v Crossovers
+- Species reprodution
 - Fixed-size species evolution
-- Difference between two genomes (for speciation)
+v Difference between two genomes (for speciation)
+- Fitness sharing
+- If the maximumFitness of a species does not improve for 15 generations, stop reprodution.
 
 - Keep track of the best genome across each species every generation
 - Print the best genome across all species each generation, identify its species (to see jumps to a different species)

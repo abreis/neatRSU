@@ -31,10 +31,8 @@ extern float gm_compat_weight;
 
 extern boost::random::mt19937 					g_rng;
 extern boost::random::bernoulli_distribution<> 	g_rnd_5050;
-extern boost::random::bernoulli_distribution<> 	g_rnd_mutWeights;
-extern boost::random::bernoulli_distribution<> 	g_rnd_addConn;
-extern boost::random::bernoulli_distribution<> 	g_rnd_addNode;
 extern boost::random::bernoulli_distribution<> 	g_rnd_inheritDisabled;
+extern boost::random::bernoulli_distribution<> 	g_rnd_perturbOrNew;
 extern boost::random::normal_distribution<> 	g_rnd_gauss;
 
 #define d_outputnode g_inputs+1
@@ -43,6 +41,8 @@ extern boost::random::normal_distribution<> 	g_rnd_gauss;
 
 /* Functions
    --------- */
+// Given a probability, returns a Bernoulli outcome.
+bool OneShotBernoulli(float probability);
 
 
 

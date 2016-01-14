@@ -28,10 +28,8 @@ float gm_compat_weight 	= 0.4;	// flip to 3.0 for a larger population (e.g. 1000
 
 boost::random::mt19937 						g_rng;
 boost::random::bernoulli_distribution<> 	g_rnd_5050;
-boost::random::bernoulli_distribution<> 	g_rnd_mutWeights;
-boost::random::bernoulli_distribution<> 	g_rnd_addConn;
-boost::random::bernoulli_distribution<> 	g_rnd_addNode;
 boost::random::bernoulli_distribution<> 	g_rnd_inheritDisabled;
+boost::random::bernoulli_distribution<> 	g_rnd_perturbOrNew;
 boost::random::normal_distribution<> 		g_rnd_gauss;
 
 
@@ -62,12 +60,13 @@ int main(int argc, char *argv[])
 	uint32_t 	m_genmax			= 1;
 	uint16_t 	m_maxPop			= 150;
 
+	float 	m_p_mutate_weights 			= 0.80;
+	float 	m_p_weight_perturb_or_new 	= 0.90;
+	float	m_p_inherit_disabled		= 0.75;
 
 	// Non-CLI-configurable options
-	float 	m_p_mutate_addweight	= 0.50;
-	float 	m_p_mutate_addconn		= 0.01;
-	float 	m_p_mutate_addnode		= 0.01;
-	float	m_p_inherit_disabled	= 0.50; // TODO
+	float 	m_p_mutate_addnode		= 0.03;
+	float 	m_p_mutate_addconn		= 0.05; // use 0.30 for large population size
 	// float	m_survival				= 0.20;
 
 	// List of command line options
@@ -195,10 +194,8 @@ int main(int argc, char *argv[])
 
 	// Boolean (bernoulli) distributions
 	g_rnd_5050.param( 				boost::random::bernoulli_distribution<>::param_type(0.5) );
-	g_rnd_mutWeights.param( 		boost::random::bernoulli_distribution<>::param_type(m_p_mutate_addweight) );
-	g_rnd_addConn.param( 			boost::random::bernoulli_distribution<>::param_type(m_p_mutate_addconn) );
-	g_rnd_addNode.param( 			boost::random::bernoulli_distribution<>::param_type(m_p_mutate_addnode) );
 	g_rnd_inheritDisabled.param( 	boost::random::bernoulli_distribution<>::param_type(m_p_inherit_disabled) );
+	g_rnd_perturbOrNew.param(		boost::random::bernoulli_distribution<>::param_type(m_p_weight_perturb_or_new) );
 
 	// Source of Gaussian randomness (for weight mutations)
 	// Inits: (mean,stdev)
@@ -310,6 +307,11 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+bool OneShotBernoulli(float probability)
+{
+	boost::random::bernoulli_distribution<> oneShot(probability);
+	return oneShot(g_rng);
+}
 
 
 // // Push a DataEntry through it

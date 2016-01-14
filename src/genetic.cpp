@@ -376,7 +376,12 @@ void Genome::MutatePerturbWeights(void)
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
-			iterConn->second.weight += g_rnd_gauss(g_rng);
+			if(g_rnd_perturbOrNew(g_rng))
+				// Chance of perturbing the weight
+				iterConn->second.weight += g_rnd_gauss(g_rng);
+			else
+				// Change of replacing the weight
+				iterConn->second.weight = g_rnd_gauss(g_rng);
 }
 
 
