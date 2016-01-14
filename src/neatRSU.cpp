@@ -112,13 +112,13 @@ int main(int argc, char *argv[])
 	vector<DataEntry> TrainingDB;
 
 	if(m_traindata.empty())
-		{ cout << "ERROR\tPlease specify a file with training data." << endl; return 1; }
+		{ cout << "ERROR\tPlease specify a file with training data." << endl; exit(1); }
 	else
 	{
 	 	cout << "INFO\tLoading training data on " << m_traindata << " into memory... " << flush;
 
 		ifstream trainDataIn( m_traindata.c_str() );
-		if (!trainDataIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; return 1; }
+		if (!trainDataIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; exit(1); }
 
 		// Setup boost::tokenizer
 		vector<string> fields; string line;
@@ -137,7 +137,11 @@ int main(int argc, char *argv[])
 		trainDataIn.close();
 		cout << "done." << endl;
 		cout << "INFO\tLoaded " << TrainingDB.size() << " training entries into memory." << endl;
+
+		// Sort TrainingData by NodeID, then Time.
+		sort(TrainingDB.begin(), TrainingDB.end(), sortIdThenTime);
 	}
+
 
 
 	/***
@@ -157,7 +161,7 @@ int main(int argc, char *argv[])
 	 	cout << "INFO\tLoading test data on " << m_testdata << " into memory... " << flush;
 
 		ifstream testDataIn( m_testdata.c_str() );
-		if (!testDataIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; return 1; }
+		if (!testDataIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; exit(1); }
 
 
 		// Setup boost::tokenizer
@@ -178,6 +182,8 @@ int main(int argc, char *argv[])
 		cout << "done." << endl;
 		cout << "INFO\tLoaded " << TestDB.size() << " testing entries into memory." << endl;
 
+		// Sort TestDB by NodeID, then Time.
+		sort(TestDB.begin(), TestDB.end(), sortIdThenTime);
 	}
 
 
@@ -325,10 +331,26 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+
 bool OneShotBernoulli(float probability)
 {
 	boost::random::bernoulli_distribution<> oneShot(probability);
 	return oneShot(g_rng);
+}
+
+
+bool sortIdThenTime( DataEntry const &first, DataEntry const &second )
+{
+	if(first.node_id < second.node_id)
+		return true;
+	else
+		if(first.node_id > second.node_id)
+			return false;
+		else 
+			if(first.relative_time < second.relative_time)
+				return true;
+			else 
+				return false;
 }
 
 

@@ -44,13 +44,16 @@ extern boost::random::normal_distribution<> 	g_rnd_gauss;
 // Given a probability, returns a Bernoulli outcome.
 bool OneShotBernoulli(float probability);
 
+// Auxiliary for std::sort, will sort a database by nodeID, then time.
+class DataEntry;
+bool sortIdThenTime( DataEntry const &first, DataEntry const &second );
 
 
 /* Classes and Structs
    ------------------- */
 
 // An entry in the database.
-// '<' overloaded w.r.t. relative_time
+// '<' overloaded w.r.t. time
 class DataEntry
 {
 public:

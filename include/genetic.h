@@ -159,7 +159,7 @@ public:
 class Species
 {
 public:
-	double maximumFitness = DBL_MAX;
+	double bestFitness = DBL_MAX;	// Best possible fitness is=0
 	uint16_t generationsSinceLastImprovement=0;
 
 	vector<Genome> genomes;
