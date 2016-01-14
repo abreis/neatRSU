@@ -229,6 +229,7 @@ int main(int argc, char *argv[])
 
 
 	uint32_t generationNumber = 0;
+	if(gm_debug) cout << "DEBUG Generation " << generationNumber << endl;
 	do
 	{
 		// Go through each species
@@ -237,10 +238,11 @@ int main(int argc, char *argv[])
 			iterSpecies != population.species.end();
 			iterSpecies++)
 		{
-			// Go through each genome in this species
-			for(vector<Genome>::iterator
-				iterGenome = iterSpecies->genomes.begin();
-				iterGenome != iterSpecies->genomes.end();
+			// Go through each genome in this species.
+			// Using a reverse iterator lets us avoid processing new genomes we tack on.
+			for(vector<Genome>::reverse_iterator
+				iterGenome = iterSpecies->genomes.rbegin();
+				iterGenome != iterSpecies->genomes.rend();
 				iterGenome++)
 			{
 				// TODO: clone genome, mutate clone, push clone to species?
@@ -257,9 +259,38 @@ int main(int argc, char *argv[])
 				if(OneShotBernoulli(m_p_mutate_addconn))
 					iterGenome->MutateAddConnection();
 
-			} // END GENOME ITERATION
+			} // END GENOME ITERATION (MUTATION)
 
-			// TODO compute the fitness and adjusted fitness of each Genome
+			// Compute and store the fitness of each Genome
+			for(vector<Genome>::iterator
+				iterGenome = iterSpecies->genomes.begin();
+				iterGenome != iterSpecies->genomes.end();
+				iterGenome++)
+				iterGenome->fitness = iterGenome->GetFitness(&TrainingDB);
+
+			// TODO Convert fitness to adjustedFitness
+
+
+
+
+			/* Eliminate the lowest performing members from the population.
+			 */
+
+			// Sort the vector of Genomes by fitness.
+			sort(iterSpecies->genomes.begin(), iterSpecies->genomes.end());
+			// Sorting puts the lowest value, and therefore the highest fitness, last.
+			// Determine how many Genomes we're pop-ing out, based on survival metric.
+			uint16_t noSurvivors = iterSpecies->genomes.size() * m_survival_threshold;
+			if(gm_debug) cout << "DEBUG Killing " << noSurvivors << " from species of size " << iterSpecies->genomes.size() << '\n';
+
+			// Trim genome list
+			if(noSurvivors>0)
+				for(uint16_t killCount = 0; killCount < noSurvivors; killCount++)
+					iterSpecies->genomes.pop_back();
+
+
+			/* TODO Perform intra-species mating
+			 */
 
 			// Determine how many offspring we can have
 			// TODO use a ratio of sum(adjustedFitness)
@@ -267,14 +298,8 @@ int main(int argc, char *argv[])
 			// TODO fitness is "lowest is best", so the smallest sum of fitness is the best species
 			uint16_t speciesPopulation = m_maxPop * 1;
 
-			/* TODO Eliminate the lowest performing members from the population.
-			 */
-			// Sort the vector of Genomes by fitness.
-			sort(iterSpecies->genomes.begin(), iterSpecies->genomes.end());
-
-			// TODO Perform intra-species mating
-
-			// "The entire population is then replaced by the offspring of the remaining organisms in each species."
+			// TODO "The entire population is then replaced by the offspring of the remaining organisms in each species."
+			// TODO Find and keep the champion of each species.
 
 
 		} // END SPECIES ITERATION
