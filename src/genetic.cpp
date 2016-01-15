@@ -613,7 +613,6 @@ void Population::PrintSummary(ostream& outstream)
 
 	// Go through species.
 	// Print Species ID. Generation formed. Number of genomes. Best fitness. Generations since bestFitness improved.
-	map<uint16_t,Genome*> speciesChampions;
 	for(vector<Species>::const_iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
@@ -627,5 +626,34 @@ void Population::PrintSummary(ostream& outstream)
 	}
 
 	// Footer
-	outstream 	<< "----------------------------------------------------" << endl;
+	outstream 	<< "----------------------------------------------------" << '\n';
+}
+
+
+void Population::PrintVerticalSpeciesStack(ostream& outstream)
+{
+	const uint8_t terminalWidth = 100;
+	static const string numToChar = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+	// Count total genomes
+	uint16_t totalGenomes = 0;
+	for(vector<Species>::const_iterator 
+		iterSpecies = species.begin();
+		iterSpecies != species.end();
+		iterSpecies++)
+		totalGenomes += iterSpecies->genomes.size();
+
+	// Print a char for each % of genomes in each species.
+	for(vector<Species>::const_iterator 
+		iterSpecies = species.begin();
+		iterSpecies != species.end();
+		iterSpecies++)
+	{
+		for(uint8_t 
+			count = 0;
+			count < (unsigned int)( (float)(iterSpecies->genomes.size())/(float)totalGenomes*(float)terminalWidth );
+			count++)
+			outstream << numToChar[iterSpecies->id];
+	}
+	outstream << '\n';
 }

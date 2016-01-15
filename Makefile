@@ -2,7 +2,7 @@
 # Expects libboost on PATH or /usr/local/include, /usr/local/lib
 
 CC=g++
-CXXFLAGS=-c -O2 -std=c++11 -Wall --pedantic
+CXXFLAGS=-c -O2 -std=c++11 -Wall --pedantic -Wno-unused-variable
 LDFLAGS=-O2
 
 INCLUDEDIR=include

@@ -192,6 +192,9 @@ public:
 
 	// Prints a summary of the population: best fitness so far, list of species, statistics.
 	void PrintSummary(ostream& outstream);
+
+	// Prints a vertical stacked graph of the % size each species occupies. 
+	void PrintVerticalSpeciesStack(ostream& outstream);
 };
 
 #endif /* GENETIC_H_ */
