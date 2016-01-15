@@ -172,7 +172,7 @@ public:
 		{ id = iid; creation = generation; }
 
 	// Perform mating on this species, up to the maximum of 'count'.
-	void Reproduce(uint16_t count);
+	void Reproduce(uint16_t targetSpeciesSize);
 
 	// Finds the best genome in the species and returns a pointer to it.
 	Genome* FindChampion(void);
@@ -190,11 +190,18 @@ public:
 	// How many species we aim to get
 	// uint16_t targetNumber=10;
 
+	// Go through every species and genome, update its fitness value,
+	// counters, champions, and then the population's own best.
+	void UpdateStatistics(void);
+
 	// Prints a summary of the population: best fitness so far, list of species, statistics.
 	void PrintSummary(ostream& outstream);
 
 	// Prints a vertical stacked graph of the % size each species occupies. 
 	void PrintVerticalSpeciesStack(ostream& outstream);
+
+	// Prints a (generation,bestFitness) pair.
+	void PrintFitness(ostream& outstream);
 };
 
 #endif /* GENETIC_H_ */

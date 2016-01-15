@@ -71,6 +71,7 @@ int main(int argc, char *argv[])
 	bool 		m_printPopulation		= false;
 	string 		m_printPopulationFile 	= "";
 	string 		m_printSpeciesStackFile = "";
+	string 		m_printFitnessFile		= "";
 
 	// Non-CLI-configurable options
 	float 	m_p_weight_perturb_or_new 	= 0.90;
@@ -92,6 +93,7 @@ int main(int argc, char *argv[])
 		("print-population", 													"print population statistics")
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 		("print-speciesstack-file", boost::program_options::value<string>(), 	"print graph of species size to a file")
+		("print-fitness-file", 		boost::program_options::value<string>(), 	"print best fitness to a file")
 	    ("debug", 													"enable debug mode")
 	    ("help", 													"give this help list")
 	;
@@ -117,6 +119,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("print-population"))			m_printPopulation 		= true;
 	if (varMap.count("print-population-file"))		m_printPopulationFile 	= varMap["print-population-file"].as<string>();
 	if (varMap.count("print-speciesstack-file"))	m_printSpeciesStackFile = varMap["print-speciesstack-file"].as<string>();
+	if (varMap.count("print-fitness-file"))			m_printFitnessFile 		= varMap["print-fitness-file"].as<string>();
 
 	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
 
@@ -322,44 +325,49 @@ int main(int argc, char *argv[])
 			// Reproduce
 			iterSpecies->Reproduce(newSpeciesPopulation);
 
-			// TODO "The entire population is then replaced by the offspring of the remaining organisms in each species."
 
 		} // END SPECIES ITERATION
 
-	/* Speciation
-	 */
+		/* Speciation
+		 */
 
-		// TODO need an updateSpecies routine that updates the best fitness of all species and keeps track of last time fitness improved.
+			// TODO need an updateSpecies routine that updates the best fitness of all species and keeps track of last time fitness improved.
 
-	// Create a new Population with all of the species, but with a single champion genome on each species.
-	// Run through all Genomes on all species, matching their compatibility to the champion of each species.
-	// Champions are always the first genome in the vector<species>, species.begin()
-	// Create a new species if compatibility>m_compat_threshold for all existing species
-	// If compatibility == 0, do nothing, it's a clone or the champion itself.
-	// Clear out empty species (how do species extinguish themselves?)
-	// Replace main Population* pointer. Delete old Population.
+		// Create a new Population with all of the species, but with a single champion genome on each species.
+		// Run through all Genomes on all species, matching their compatibility to the champion of each species.
+		// Champions are always the first genome in the vector<species>, species.begin()
+		// Create a new species if compatibility>m_compat_threshold for all existing species
+		// If compatibility == 0, do nothing, it's a clone or the champion itself.
+		// Clear out empty species (how do species extinguish themselves?)
+		// Replace main Population* pointer. Delete old Population.
 
-	// TODO may need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
-
-
-	/* Generation end post-processing
-	 */
+		// TODO may need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
 
 
-	if(m_printPopulation)
-		population->PrintSummary(cout);
+		/* Generation end post-processing
+		 */
 
-	if(!m_printPopulationFile.empty()) 
-	{
-		static ofstream ofPopSummary(m_printPopulationFile.c_str());
-		population->PrintSummary(ofPopSummary);
-	}
 
-	if(!m_printSpeciesStackFile.empty())
-	{
-		static ofstream ofSpeciesStack(m_printSpeciesStackFile.c_str());
-		population->PrintVerticalSpeciesStack(ofSpeciesStack);
-	}
+		if(m_printPopulation)
+			population->PrintSummary(cout);
+
+		if(!m_printPopulationFile.empty()) 
+		{
+			static ofstream ofPopSummary(m_printPopulationFile.c_str());
+			population->PrintSummary(ofPopSummary);
+		}
+
+		if(!m_printSpeciesStackFile.empty())
+		{
+			static ofstream ofSpeciesStack(m_printSpeciesStackFile.c_str());
+			population->PrintVerticalSpeciesStack(ofSpeciesStack);
+		}
+
+		if(!m_printFitnessFile.empty())
+		{
+			static ofstream ofFitness(m_printFitnessFile.c_str());
+			population->PrintFitness(ofFitness);
+		}
 
 
 	// Generation loop control

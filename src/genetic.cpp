@@ -592,9 +592,20 @@ void Genome::PrintToGV(string filename)
 }
 
 
-void Species::Reproduce(uint16_t count)
+void Species::Reproduce(uint16_t targetSpeciesSize)
 {
+	// Restrain the species to doubling in size, at most, on each iteration
+	targetSpeciesSize = fmin(targetSpeciesSize, 2*genomes.size());
+
+	// Vector to hold the new genomes
 	vector<Genome> offsprings;
+
+	// Sort our current genomes by fitness, best (lowest) on top
+	sort(genomes.begin(), genomes.end());
+
+	// Always keep the champion, i.e., the first genome
+	Genome champion = genomes.front();
+	offsprings.push_back(champion);
 
 	// If there's a single organism, clone and mutate it
 	if(genomes.size()==1)
@@ -612,6 +623,28 @@ void Species::Reproduce(uint16_t count)
 				newGenome.MutatePerturbWeights();
 	
 		offsprings.push_back(newGenome);
+	}
+	else
+	{
+		// Now fill the offsprings with mating and mutations
+		vector<Genome>::const_iterator iterGenomes;
+		iterGenomes = genomes.begin();
+
+		// Everyone mates and mutates in order, most fit genomes go first
+		// TODO bias towards more fit genomes having more offspring
+		while( (offsprings.size() < targetSpeciesSize) or (iterGenomes != genomes.end()) )
+		{
+
+
+			iterGenomes++;
+		}
+
+	if(gm_debug) cout << "DEBUG Reproduce species " << id << " size " << genomes.size() << " target " << targetSpeciesSize 
+		<< " offspring " << offsprings.size() << '\n';
+
+	// Finally, replace the old population with the new
+	genomes = offsprings;
+	
 	}
 
 }
@@ -634,6 +667,12 @@ Genome* Species::FindChampion(void)
 		}
 
 	return champion;
+}
+
+
+void Population::UpdateStatistics(void)
+{
+	// TODO
 }
 
 
@@ -691,4 +730,10 @@ void Population::PrintVerticalSpeciesStack(ostream& outstream)
 			outstream << numToChar[iterSpecies->id];
 	}
 	outstream << '\n';
+}
+
+
+void Population::PrintFitness(ostream& outstream)
+{
+	outstream << g_generationNumber << ',' << bestFitness << '\n';
 }

@@ -27,6 +27,8 @@ v Structural mutations - AddConnection
 v Innovation numbers
 v Crossovers
 - Species reprodution
+- Updating fitness statistics on genomes/species/population
+
 v Difference between two genomes (for speciation)
 - Fitness sharing
 - If the maximumFitness of a species does not improve for 15 generations, stop reprodution.
