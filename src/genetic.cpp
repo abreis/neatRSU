@@ -74,7 +74,7 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 				assert(geneKey == iterGeneOnLeastFit->first); // TODO remove
 
 				// Either (or both) are enabled, so do the copy 50/50
-				if(g_rnd_5050(g_rng))
+				if(OneShotBernoulli(0.50))
 					// Take from the mostFitGenome
 					offspring.connections[geneKey] = iterGenesOnMostFit->second;
 				else
@@ -84,7 +84,7 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 				// Finally, if one or the other were disabled, randomly decide if the gene will be enabled or disabled.
 				if( !iterGenesOnMostFit->second.enabled or !iterGeneOnLeastFit->second.enabled )
 				{
-					if(g_rnd_inheritDisabled(g_rng))
+					if(OneShotBernoulli(g_m_p_inherit_disabled))
 						offspring.connections[geneKey].enabled = true;
 					else
 						offspring.connections[geneKey].enabled = false;
@@ -387,7 +387,7 @@ void Genome::MutatePerturbWeights(void)
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
-			if(g_rnd_perturbOrNew(g_rng))
+			if(OneShotBernoulli(g_m_p_weight_perturb_or_new))
 				// Chance of perturbing the weight
 				iterConn->second.weight += g_rnd_gauss(g_rng);
 			else
@@ -632,21 +632,20 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 
 		// Everyone mates and mutates in order, most fit genomes go first
 		// TODO bias towards more fit genomes having more offspring
-		while( (offsprings.size() < targetSpeciesSize) or (iterGenomes != genomes.end()) )
+		while( (offsprings.size() < targetSpeciesSize) and (iterGenomes != genomes.end()) )
 		{
+
 
 
 			iterGenomes++;
 		}
-
+	}
+	
 	if(gm_debug) cout << "DEBUG Reproduce species " << id << " size " << genomes.size() << " target " << targetSpeciesSize 
 		<< " offspring " << offsprings.size() << '\n';
 
 	// Finally, replace the old population with the new
 	genomes = offsprings;
-	
-	}
-
 }
 
 
