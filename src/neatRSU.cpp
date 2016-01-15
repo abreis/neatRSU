@@ -25,9 +25,14 @@ map<uint16_t,string> g_nodeNames =
 	{8, "bias"}
 };
 
-float gm_compat_excess 	= 1.0;
-float gm_compat_disjoint = 1.0;
-float gm_compat_weight 	= 0.4;	// flip to 3.0 for a larger population (e.g. 1000)
+float gm_compat_excess 		= 1.0;
+float gm_compat_disjoint 	= 1.0;
+float gm_compat_weight 		= 0.4;	// flip to 3.0 for a larger population (e.g. 1000)
+
+float g_m_p_mutate_weights 	= 0.80;
+float g_m_p_mutate_addnode	= 0.03;
+float g_m_p_mutate_addconn	= 0.05; // use 0.30 for large population size
+
 
 boost::random::mt19937 						g_rng;
 boost::random::bernoulli_distribution<> 	g_rnd_5050;
@@ -70,9 +75,6 @@ int main(int argc, char *argv[])
 	// Non-CLI-configurable options
 	float 	m_p_weight_perturb_or_new 	= 0.90;
 	float	m_p_inherit_disabled		= 0.75;
-	float 	m_p_mutate_weights 			= 0.80;
-	float 	m_p_mutate_addnode			= 0.03;
-	float 	m_p_mutate_addconn			= 0.05; // use 0.30 for large population size
 	float	m_survival_threshold		= 0.20;
 	float	m_compat_threshold			= 3.00;
 
@@ -276,19 +278,7 @@ int main(int argc, char *argv[])
 				iterGenome != iterSpecies->genomes.rend();
 				iterGenome++)
 			{
-				// TODO: clone genome, mutate clone, push clone to species?
 
-				// Mutate Perturb Weights?
-				if(OneShotBernoulli(m_p_mutate_weights))
-					iterGenome->MutatePerturbWeights();
-
-				// Mutate Add Node?
-				if(OneShotBernoulli(m_p_mutate_addnode))
-					iterGenome->MutateAddNode();
-
-				// Mutate Add Connection?
-				if(OneShotBernoulli(m_p_mutate_addconn))
-					iterGenome->MutateAddConnection();
 
 			} // END GENOME ITERATION (MUTATION)
 

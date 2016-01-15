@@ -30,6 +30,10 @@ extern float gm_compat_excess;
 extern float gm_compat_disjoint; 
 extern float gm_compat_weight; 
 
+extern float g_m_p_mutate_weights;
+extern float g_m_p_mutate_addnode;
+extern float g_m_p_mutate_addconn;
+
 extern boost::random::mt19937 					g_rng;
 extern boost::random::bernoulli_distribution<> 	g_rnd_5050;
 extern boost::random::bernoulli_distribution<> 	g_rnd_inheritDisabled;

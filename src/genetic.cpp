@@ -594,6 +594,25 @@ void Genome::PrintToGV(string filename)
 
 void Species::Reproduce(uint16_t count)
 {
+	vector<Genome> offsprings;
+
+	// If there's a single organism, clone and mutate it
+	if(genomes.size()==1)
+	{
+		// Do a *single* structural mutation, *or* perturb weights
+		Genome newGenome = genomes.front();
+
+		// Mutate Add Node
+		if(OneShotBernoulli(g_m_p_mutate_addnode))
+			newGenome.MutateAddNode();
+		else if(OneShotBernoulli(g_m_p_mutate_addconn))
+				newGenome.MutateAddConnection();
+		else
+			if(OneShotBernoulli(g_m_p_mutate_weights))
+				newGenome.MutatePerturbWeights();
+	
+		offsprings.push_back(newGenome);
+	}
 
 }
 
