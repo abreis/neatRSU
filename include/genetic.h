@@ -143,7 +143,7 @@ public:
 	uint16_t CountEnabledGenes(void);
 
 	// Print the contents of this Genome
-	void Print();
+	void Print(ostream& outstream);
 
 	// Print the contents of this Genome as Graphviz language to a file
 	void PrintToGV(string filename);
@@ -159,20 +159,39 @@ public:
 class Species
 {
 public:
+	uint16_t id = UINT16_MAX; 
+	uint32_t creation = UINT32_MAX;
+	
 	double bestFitness = DBL_MAX;	// Best possible fitness is=0
-	uint16_t generationsSinceLastImprovement=0;
+	uint16_t lastFitnessImproved=0;
 
 	vector<Genome> genomes;
+
+	// Constructor, require speciesID
+	Species(uint16_t iid, uint32_t generation)
+		{ id = iid; creation = generation; }
+
+	// Perform mating on this species, up to the maximum of 'count'.
+	void Reproduce(uint16_t count);
+
+	// Finds the best genome in the species and returns a pointer to it.
+	Genome* FindChampion(void);
 };
 
 // A population.
 class Population
 {
 public:
+	double bestFitness = DBL_MAX;	// Best possible fitness is=0
+	uint16_t bestFitnessGeneration=0;
+
 	vector<Species> species;
 
 	// How many species we aim to get
-	uint16_t targetNumber=10;
+	// uint16_t targetNumber=10;
+
+	// Prints a summary of the population: best fitness so far, list of species, statistics.
+	void PrintSummary(ostream& outstream);
 };
 
 #endif /* GENETIC_H_ */

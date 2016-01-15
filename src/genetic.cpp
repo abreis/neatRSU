@@ -175,14 +175,19 @@ double Compatibility(Genome* const gen1, Genome* const gen2)
 	// Average out weight differences
 	double averageWeightDifference = totalWeightDifference/matchingGenes;
 
-	// To stop normalization for gene size (recommended for small genomes (<20 genes)), uncomment:
+	// To stop normalization for gene size (recommended for small genomes (<20 genes)), uncomment this:
 	// genesInLargerGenome = 1.0;
 
-	return 
+
+	const double compatibility = 	
 		( ( gm_compat_excess*excessGenes )/genesInLargerGenome 
 		+ ( gm_compat_disjoint*disjointGenes )/genesInLargerGenome 
 		+ gm_compat_weight*averageWeightDifference
 		);
+
+	if(gm_debug) cout << "DEBUG Determined a compatibility of " << compatibility << '\n';
+
+	return compatibility;
 }
 
 
@@ -483,33 +488,33 @@ uint16_t Genome::CountEnabledGenes(void)
 }
 
 
-void Genome::Print()
+void Genome::Print(ostream& outstream)
 {
 	// Print a list of nodes
 	for(uint16_t i = nodes.size(); i>0; i--)
-		cout << "----"; cout << '\n';
+		outstream << "----"; outstream << '\n';
 	for(map<uint16_t, NodeGene>::const_iterator 
 		iterNode = nodes.begin();
 		iterNode != nodes.end();
 		iterNode++)
-		cout << left << setw(4) << setfill(' ') << iterNode->first; cout << '\n';
+		outstream << left << setw(4) << setfill(' ') << iterNode->first; outstream << '\n';
 	for(map<uint16_t, NodeGene>::const_iterator 
 		iterNode = nodes.begin();
 		iterNode != nodes.end();
 		iterNode++)
-		cout << ( (iterNode->second.type==NodeType::SENSOR)?"Sen ":( (iterNode->second.type==NodeType::HIDDEN)?"Hid ":"Out " ) ); cout << '\n';
+		outstream << ( (iterNode->second.type==NodeType::SENSOR)?"Sen ":( (iterNode->second.type==NodeType::HIDDEN)?"Hid ":"Out " ) ); outstream << '\n';
 	for(uint16_t i = nodes.size(); i>0; i--)
-		cout << "----"; cout << '\n';
+		outstream << "----"; outstream << '\n';
 
 	// Print each node's values
 	// for(map<uint16_t, NodeGene>::const_iterator 
 	// 	iterNode = nodes.begin();
 	// 	iterNode != nodes.end();
 	// 	iterNode++)
-	// 	cout << iterNode->first << '\t' << iterNode->second.valueLast << '\t' << iterNode->second.valueNow << '\n';
+	// 	outstream << iterNode->first << '\t' << iterNode->second.valueLast << '\t' << iterNode->second.valueNow << '\n';
 
 	// Print a list of connections
-	cout 	<< "-------------------------------------" << '\n'
+	outstream 	<< "-------------------------------------" << '\n'
 			<< "Path   Enable   Weight          Innov" << '\n'
 			<< "-------------------------------------" << '\n';
 
@@ -518,7 +523,7 @@ void Genome::Print()
 		iterConn != connections.end();
 		iterConn++)
 	{
-		cout 	<< setfill(' ')	<< right << setw(2) << iterConn->second.from_node 
+		outstream 	<< setfill(' ')	<< right << setw(2) << iterConn->second.from_node 
 				<< "->" 		<< left << setw(2) << iterConn->second.to_node
 				<< right
 				<< '\t' << ( (iterConn->second.enabled)?"":"DIS" )
@@ -584,4 +589,43 @@ void Genome::PrintToGV(string filename)
 	// Close file
 	gvout << "}\n";
 	gvout.close();
+}
+
+
+void Species::Reproduce(uint16_t count)
+{
+
+}
+
+
+Genome* Species::FindChampion(void)
+{
+	// TODO
+	return 0;
+}
+
+
+void Population::PrintSummary(ostream& outstream)
+{
+	// Header
+	outstream 	<< "====================================================\n"
+				<< "Species Created Genomes Stagnated       Best Fitness\n";
+
+	// Go through species.
+	// Print Species ID. Generation formed. Number of genomes. Best fitness. Generations since bestFitness improved.
+	map<uint16_t,Genome*> speciesChampions;
+	for(vector<Species>::const_iterator 
+		iterSpecies = species.begin();
+		iterSpecies != species.end();
+		iterSpecies++)
+	{
+		outstream 	<< iterSpecies->id << '\t' 
+					<< iterSpecies->creation << '\t'
+					<< iterSpecies->genomes.size() << '\t'
+					<< iterSpecies->lastFitnessImproved << '\t'
+					<< '\t' << iterSpecies->bestFitness << '\n';
+	}
+
+	// Footer
+	outstream 	<< "----------------------------------------------------" << endl;
 }

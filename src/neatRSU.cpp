@@ -60,6 +60,9 @@ int main(int argc, char *argv[])
 	uint32_t 	m_genmax			= 1;
 	uint16_t 	m_maxPop			= 150;
 
+	bool 		m_printPopulation		= false;
+	string 		m_printPopulationFile 	= "";
+
 	// Non-CLI-configurable options
 	float 	m_p_weight_perturb_or_new 	= 0.90;
 	float	m_p_inherit_disabled		= 0.75;
@@ -67,6 +70,7 @@ int main(int argc, char *argv[])
 	float 	m_p_mutate_addnode			= 0.03;
 	float 	m_p_mutate_addconn			= 0.05; // use 0.30 for large population size
 	float	m_survival_threshold		= 0.20;
+	float	m_compat_threshold			= 3.00;
 
 	// List of command line options
 	boost::program_options::options_description cliOptDesc("Options");
@@ -79,6 +83,8 @@ int main(int argc, char *argv[])
 		("compat-excess",		boost::program_options::value<float>(),		"compatibility weight c1")
 		("compat-disjoint",		boost::program_options::value<float>(),		"compatibility weight c2")
 		("compat-weight",		boost::program_options::value<float>(),		"compatibility weight c3")
+		("print-population", 													"print population statistics")
+		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 	    ("debug", 													"enable debug mode")
 	    ("help", 													"give this help list")
 	;
@@ -100,6 +106,10 @@ int main(int argc, char *argv[])
 	if (varMap.count("compat-excess"))			gm_compat_excess 	= varMap["compat-excess"].as<float>();
 	if (varMap.count("compat-disjoint"))		gm_compat_disjoint 	= varMap["compat-disjoint"].as<float>();
 	if (varMap.count("compat-weight"))			gm_compat_weight 	= varMap["compat-weight"].as<float>();
+
+	if (varMap.count("print-population"))		m_printPopulation 		= true;
+	if (varMap.count("print-population-file"))	m_printPopulationFile 	= varMap["print-population-file"].as<string>();
+
 	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
 
 
@@ -216,15 +226,18 @@ int main(int argc, char *argv[])
 
 	/* Set global number of inputs and input names at the start of the file */
 
-	// Create a population
-	Population population;
+	// A counter for species IDs
+	static uint16_t g_newSpeciesId = 0;
 
-	// Create the first species
-	Species firstSpecies;
+	// Create a population
+	Population* population = new Population();
+
+	// Create the first species. First ID, generation=0.
+	Species firstSpecies(++g_newSpeciesId, 0);
 
 	// Push the first genome
 	firstSpecies.genomes.push_back( Genome(g_inputs) );
-	population.species.push_back(firstSpecies);
+	population->species.push_back(firstSpecies);
 
 	// TODO: weird things may happen if the first genome's weights don't get randomized.
 
@@ -235,13 +248,22 @@ int main(int argc, char *argv[])
 
 
 	uint32_t generationNumber = 0;
-	if(gm_debug) cout << "DEBUG Generation " << generationNumber << endl;
 	do
 	{
+		if(gm_debug) cout << "DEBUG Generation " << generationNumber << endl;
+	
+		/* Generation loop initial setup
+		 */ 
+		double l_totalFitness = 0.0;
+		double l_meanModifiedFitness = 0.0;
+
+		/* Iterate for mutations
+		 */
+
 		// Go through each species
 		for(vector<Species>::iterator 
-			iterSpecies = population.species.begin();
-			iterSpecies != population.species.end();
+			iterSpecies = population->species.begin();
+			iterSpecies != population->species.end();
 			iterSpecies++)
 		{
 			// Go through each genome in this species.
@@ -287,7 +309,7 @@ int main(int argc, char *argv[])
 			// Sorting puts the lowest value, and therefore the highest fitness, last.
 			// Determine how many Genomes we're pop-ing out, based on survival metric.
 			uint16_t noSurvivors = iterSpecies->genomes.size() * m_survival_threshold;
-			if(gm_debug) cout << "DEBUG Killing " << noSurvivors << " from species of size " << iterSpecies->genomes.size() << '\n';
+			if(gm_debug) cout << "DEBUG Killing " << noSurvivors << " from species id " << iterSpecies->id << " size " << iterSpecies->genomes.size() << '\n';
 
 			// Trim genome list
 			if(noSurvivors>0)
@@ -305,15 +327,32 @@ int main(int argc, char *argv[])
 			uint16_t speciesPopulation = m_maxPop * 1;
 
 			// TODO "The entire population is then replaced by the offspring of the remaining organisms in each species."
-			// TODO Find and keep the champion of each species.
-
 
 		} // END SPECIES ITERATION
 
+		/* Speciation
+		 */
+
+		// Create a new Population with all of the species, but with a single champion genome on each species.
+		// Run through all Genomes on all species, matching their compatibility to the champion of each species.
+		// Champions are always the first genome in the vector<species>, species.begin()
+		// Create a new species if compatibility>m_compat_threshold for all existing species
+		// If compatibility == 0, do nothing, it's a clone or the champion itself.
+		// Clear out empty species (how do species extinguish themselves?)
+		// Replace main Population* pointer. Delete old Population.
+
+		// TODO may need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
 
 	/* Generation end post-processing
 	 */
 
+	if(m_printPopulation)
+		population->PrintSummary(cout);
+	if(!m_printPopulationFile.empty()) 
+	{
+		static ofstream ofPopSummary(m_printPopulationFile.c_str());
+		population->PrintSummary(ofPopSummary);
+	}
 
 	// Generation loop control
 	generationNumber++;
