@@ -35,10 +35,14 @@ extern float g_m_p_mutate_addnode;
 extern float g_m_p_mutate_addconn;
 extern float g_m_p_weight_perturb_or_new; 	
 extern float g_m_p_inherit_disabled;
+extern float g_m_p_mutateOnly;
+extern float g_m_p_mateOnly;
+
 
 extern boost::random::mt19937 					g_rng;
 extern boost::random::normal_distribution<> 	g_rnd_gauss;
 
+// Warning: these are IDs (suitable for e.g. std::map), not vector indices
 #define d_outputnode g_inputs+1
 #define d_biasnode g_inputs+2
 #define d_firsthidnode g_inputs+3

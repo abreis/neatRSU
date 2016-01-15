@@ -98,7 +98,7 @@ public:
 	uint32_t adjFitness = 0;
 
 	// A unique random identifier for this genome.
-	uint64_t genomeID = 0; 
+	uint64_t id = 0; 
 
 	/* Essentials
 	 */ 
@@ -107,6 +107,9 @@ public:
 
 	// Set up a new genome with a specific number of inputs.
 	Genome(uint16_t n_inputs);
+
+	// Assigns a new random ID to the genome.
+	void RandomizeID(void);
 
 	// Adds a new node to the genome. Checks if it already exists. If no ID is specified, finds and increments.
 	uint16_t AddNode(NodeType type, uint16_t id=UINT16_MAX);

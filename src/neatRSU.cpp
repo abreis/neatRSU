@@ -30,10 +30,12 @@ float gm_compat_disjoint 	= 1.0;
 float gm_compat_weight 		= 0.4;	// flip to 3.0 for a larger population (e.g. 1000)
 
 float g_m_p_mutate_weights 			= 0.80;
+float g_m_p_weight_perturb_or_new 	= 0.90;
 float g_m_p_mutate_addnode			= 0.03;
 float g_m_p_mutate_addconn			= 0.05; // use 0.30 for large population size
-float g_m_p_weight_perturb_or_new 	= 0.90;
 float g_m_p_inherit_disabled		= 0.75;
+float g_m_p_mutateOnly				= 0.25;
+float g_m_p_mateOnly 				= 0.20;
 
 boost::random::mt19937 						g_rng;
 boost::random::normal_distribution<> 		g_rnd_gauss;
@@ -251,7 +253,7 @@ int main(int argc, char *argv[])
 	do
 	{
 		if(gm_debug) cout << "DEBUG Generation " << g_generationNumber << endl;
-	
+
 		/* Generation loop initial setup
 		 */ 
 		double l_totalFitness = 0.0;
@@ -268,14 +270,14 @@ int main(int argc, char *argv[])
 		{
 			// Go through each genome in this species.
 			// Using a reverse iterator lets us avoid processing new genomes we tack on.
-			for(vector<Genome>::reverse_iterator
-				iterGenome = iterSpecies->genomes.rbegin();
-				iterGenome != iterSpecies->genomes.rend();
-				iterGenome++)
-			{
+			// for(vector<Genome>::reverse_iterator
+			// 	iterGenome = iterSpecies->genomes.rbegin();
+			// 	iterGenome != iterSpecies->genomes.rend();
+			// 	iterGenome++)
+			// {
 
 
-			} // END GENOME ITERATION (MUTATION)
+			// } // END GENOME ITERATION (MUTATION)
 
 			// Compute and store the fitness of each Genome
 			for(vector<Genome>::iterator
@@ -304,7 +306,6 @@ int main(int argc, char *argv[])
 				for(uint16_t killCount = 0; killCount < noSurvivors; killCount++)
 					iterSpecies->genomes.pop_back();
 
-
 			/* TODO Perform intra-species mating
 			 */
 
@@ -312,10 +313,12 @@ int main(int argc, char *argv[])
 			// TODO use a ratio of sum(adjustedFitness)
 			// May need to do a separate Species cycle where all the fitness is known.
 			// TODO fitness is "lowest is best", so the smallest sum of fitness is the best species
-			uint16_t newSpeciesPopulation = m_maxPop * 1;
+			// uint16_t newSpeciesPopulation = m_maxPop; cout << "MAXPOP " << m_maxPop << endl;
 
+		cout << "MAXPOP HERE3 " << m_maxPop << endl;
 			// Reproduce
-			iterSpecies->Reproduce(newSpeciesPopulation);
+			iterSpecies->Reproduce(m_maxPop);
+		cout << "MAXPOP HERE4 " << m_maxPop << endl;
 
 
 		} // END SPECIES ITERATION
@@ -339,7 +342,6 @@ int main(int argc, char *argv[])
 		/* Generation end post-processing
 		 */
 
-
 		if(m_printPopulation)
 			population->PrintSummary(cout);
 
@@ -360,7 +362,6 @@ int main(int argc, char *argv[])
 			static ofstream ofFitness(m_printFitnessFile.c_str());
 			population->PrintFitness(ofFitness);
 		}
-
 
 	// Generation loop control
 	g_generationNumber++;

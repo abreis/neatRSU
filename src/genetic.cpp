@@ -97,6 +97,8 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 	// Now add all necessary nodes
 	offspring.nodes = mostFitGenome->nodes;
 
+	if(gm_debug) cout << "DEBUG Mating " << hex << mostFitGenome->id << " with " << leastFitGenome->id << " birthing " << offspring.id << endl;
+
 	return offspring;
 }
 
@@ -171,7 +173,6 @@ double Compatibility(Genome* const gen1, Genome* const gen2)
 		}
 	}
 
-
 	// Average out weight differences
 	double averageWeightDifference = totalWeightDifference/matchingGenes;
 
@@ -195,13 +196,13 @@ double Compatibility(Genome* const gen1, Genome* const gen2)
  */
 
 
-Genome::Genome(){}
+Genome::Genome(){ id = ( ( (uint64_t)g_rng() ) << 32 ) | g_rng(); }
 
 
 Genome::Genome(uint16_t n_inputs)
 {
 	// Assign a random ID.
-	// genomeID = ( ( (uint64_t)g_rng() ) << 32 ) | g_rng();
+	id = ( ( (uint64_t)g_rng() ) << 32 ) | g_rng();
 
 	// Add an output node. Output node ID will always be #inputs+1
 	nodes[d_outputnode] = NodeGene(d_outputnode, NodeType::OUTPUT);
@@ -220,6 +221,12 @@ Genome::Genome(uint16_t n_inputs)
 		nodes[n] = NodeGene(n, NodeType::SENSOR);
 		this->AddConnection(n, d_outputnode);
 	}
+}
+
+
+void Genome::RandomizeID(void)
+{
+	id = ( ( (uint64_t)g_rng() ) << 32 ) | g_rng();
 }
 
 
@@ -398,15 +405,19 @@ void Genome::MutatePerturbWeights(void)
 
 void Genome::MutateAddConnection(void)
 {
+	// If this genome is brand new (no hidden units, single connections to the output), adding a connection does not make sense.
+	if( nodes.size() < d_firsthidnode) return;
+
 	// Get two random node numbers. 
 	// 'from' can be anything, 'to' must exclude inputs and bias, but not output
-	// We must use a trick here, to be able to pick the output node
-	boost::random::uniform_int_distribution<> randomSrcNode(0, nodes.size()-1);
-	boost::random::uniform_int_distribution<> randomDstNode(d_firsthidnode, nodes.size());
+	// Also note we are using iterator indices, so always go (0,dest-1)
+	// We use a trick here, to be able to pick the output node
+	boost::random::uniform_int_distribution<> randomSrcNode(0, nodes.size()-1); 
+	boost::random::uniform_int_distribution<> randomDstNode(d_firsthidnode-1, nodes.size());
 	
 	// This could fail on the (unlikely) event that the network is fully connected, so we limit
-	// the number of tries.
-	uint8_t max_tries = 50;
+	// the number of tries. E.g. 6 inputs 1 bias 1 output 1 hidden node: 8 tries, 2 hidden nodes: 16 tries 
+	uint8_t max_tries = d_biasnode*(nodes.size()-d_biasnode);
 
 	// Try pairs until we find one that either doesn't exist or is disabled
 	map<uint16_t, NodeGene>::const_iterator iterSrcNode, iterDstNode;
@@ -595,7 +606,7 @@ void Genome::PrintToGV(string filename)
 void Species::Reproduce(uint16_t targetSpeciesSize)
 {
 	// Restrain the species to doubling in size, at most, on each iteration
-	targetSpeciesSize = fmin(targetSpeciesSize, 2*genomes.size());
+	uint16_t targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size());
 
 	// Vector to hold the new genomes
 	vector<Genome> offsprings;
@@ -607,11 +618,14 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 	Genome champion = genomes.front();
 	offsprings.push_back(champion);
 
+
+	uint16_t mutateCount=0, mateCount=0;
 	// If there's a single organism, clone and mutate it
 	if(genomes.size()==1)
 	{
 		// Do a *single* structural mutation, *or* perturb weights
 		Genome newGenome = genomes.front();
+		newGenome.RandomizeID();
 
 		// Mutate Add Node
 		if(OneShotBernoulli(g_m_p_mutate_addnode))
@@ -623,26 +637,68 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 				newGenome.MutatePerturbWeights();
 	
 		offsprings.push_back(newGenome);
+		mutateCount++;
 	}
 	else
+	// For >1 genome, we can perform mating
 	{
-		// Now fill the offsprings with mating and mutations
-		vector<Genome>::const_iterator iterGenomes;
+		// Run through existing genomes
+		vector<Genome>::iterator iterGenomes;
 		iterGenomes = genomes.begin();
 
 		// Everyone mates and mutates in order, most fit genomes go first
 		// TODO bias towards more fit genomes having more offspring
-		while( (offsprings.size() < targetSpeciesSize) and (iterGenomes != genomes.end()) )
+		while( (offsprings.size() < targetSpeciesSizeAdj) and (iterGenomes != genomes.end()) )
 		{
+			// Clone the main parent
+			Genome child;
 
+			// Probability that we only mutate/perturb. Offspring is parent, mutated.
+			if(OneShotBernoulli(g_m_p_mutateOnly))
+			{
+				child = *iterGenomes;
+				child.RandomizeID();
 
+				// Perturb or mutate
+				if(OneShotBernoulli(g_m_p_mutate_addnode))
+					child.MutateAddNode();
+				else if(OneShotBernoulli(g_m_p_mutate_addconn))
+					child.MutateAddConnection();
+				else
+					if(OneShotBernoulli(g_m_p_mutate_weights))
+						child.MutatePerturbWeights();
+				mutateCount++;
+			}
+			else 	
+			// We mate
+			{
+				// Perform mating, locate a second parent
+				boost::random::uniform_int_distribution<> randomParent(0, genomes.size()-1);
+				// Genome parent2 = genomes[randomParent(g_rng)];
+				child = MateGenomes(&(*iterGenomes), &genomes[randomParent(g_rng)]);
 
+				// Probability that we only mate. If not, we mutate/perturb the child as well.
+				if(!OneShotBernoulli(g_m_p_mateOnly))
+				{
+					// Perturb or mutate
+					if(OneShotBernoulli(g_m_p_mutate_addnode))
+						child.MutateAddNode();
+					else if(OneShotBernoulli(g_m_p_mutate_addconn))
+						child.MutateAddConnection();
+					else
+						if(OneShotBernoulli(g_m_p_mutate_weights))
+							child.MutatePerturbWeights();
+				}
+				mateCount++;
+			}
+
+			offsprings.push_back(child);
 			iterGenomes++;
 		}
 	}
 	
-	if(gm_debug) cout << "DEBUG Reproduce species " << id << " size " << genomes.size() << " target " << targetSpeciesSize 
-		<< " offspring " << offsprings.size() << '\n';
+	if(gm_debug) cout << "DEBUG Reproduced species " << id << " size " << genomes.size() << " target " << targetSpeciesSize 
+		<< " offspring " << offsprings.size() << " mutated " << mutateCount << " mated " << mateCount << endl;
 
 	// Finally, replace the old population with the new
 	genomes = offsprings;
