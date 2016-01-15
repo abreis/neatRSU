@@ -4,6 +4,9 @@
 // Debug flag
 bool gm_debug = false;
 
+// Global generation counter
+uint32_t g_generationNumber = 0;
+
 /* Number of inputs in the system and node names
  * g_inputs+1 -> output node
  * g_inputs+2 -> bias node
@@ -236,27 +239,21 @@ int main(int argc, char *argv[])
 	Population* population = new Population();
 
 	// Create the first species. First ID, generation=0.
-	Species firstSpecies(++g_newSpeciesId, 0);
+	Species firstSpecies(++g_newSpeciesId, g_generationNumber);
 
 	// Push the first genome
 	firstSpecies.genomes.push_back( Genome(g_inputs) );
 	population->species.push_back(firstSpecies);
 
-	// TODO remove-me
-	Species s2(++g_newSpeciesId, 0);
-	s2.genomes.push_back( Genome(g_inputs) );
-	s2.genomes.push_back( Genome(g_inputs) );
-	population->species.push_back(s2);
 
 	/***
 	 *** C0 Loop evolution until criteria match
 	 ***/
 
 
-	uint32_t generationNumber = 0;
 	do
 	{
-		if(gm_debug) cout << "DEBUG Generation " << generationNumber << endl;
+		if(gm_debug) cout << "DEBUG Generation " << g_generationNumber << endl;
 	
 		/* Generation loop initial setup
 		 */ 
@@ -330,7 +327,10 @@ int main(int argc, char *argv[])
 			// TODO use a ratio of sum(adjustedFitness)
 			// May need to do a separate Species cycle where all the fitness is known.
 			// TODO fitness is "lowest is best", so the smallest sum of fitness is the best species
-			uint16_t speciesPopulation = m_maxPop * 1;
+			uint16_t newSpeciesPopulation = m_maxPop * 1;
+
+			// Reproduce
+			iterSpecies->Reproduce(newSpeciesPopulation);
 
 			// TODO "The entire population is then replaced by the offspring of the remaining organisms in each species."
 
@@ -338,6 +338,8 @@ int main(int argc, char *argv[])
 
 	/* Speciation
 	 */
+
+		// TODO need an updateSpecies routine that updates the best fitness of all species and keeps track of last time fitness improved.
 
 	// Create a new Population with all of the species, but with a single champion genome on each species.
 	// Run through all Genomes on all species, matching their compatibility to the champion of each species.
@@ -371,8 +373,8 @@ int main(int argc, char *argv[])
 
 
 	// Generation loop control
-	generationNumber++;
-	} while( generationNumber < m_genmax );	// Specify stopping criteria here
+	g_generationNumber++;
+	} while( g_generationNumber < m_genmax );	// Specify stopping criteria here
 
 
 
@@ -462,3 +464,11 @@ bool sortIdThenTime( DataEntry const &first, DataEntry const &second )
 // cout << "\nOffspring\n";
 // gen3.Print();
 // gen3.PrintToGV("gen3.gv");
+
+
+
+
+// Species s2(++g_newSpeciesId, g_generationNumber);
+// s2.genomes.push_back( Genome(g_inputs) );
+// s2.genomes.push_back( Genome(g_inputs) );
+// population->species.push_back(s2);

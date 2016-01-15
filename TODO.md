@@ -7,7 +7,9 @@ v PrintToGV ignore disabled connections
 x Implement no recurrency at first
 - If a prediction is zero, don't include it in the fitness?
   This could bias evolution towards complex structures though
-- Sort the DBs by NodeID-then-time. Wipe the genome's memory 
+  But without it you'll get massive fitness penalties on the first few entries of a new node.
+v Sort the DBs by NodeID-then-time
+- Wipe the genome's memory on new nodeID incoming
 
 Neural
 ------
@@ -25,7 +27,6 @@ v Structural mutations - AddConnection
 v Innovation numbers
 v Crossovers
 - Species reprodution
-- Fixed-size species evolution
 v Difference between two genomes (for speciation)
 - Fitness sharing
 - If the maximumFitness of a species does not improve for 15 generations, stop reprodution.

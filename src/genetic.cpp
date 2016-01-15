@@ -600,14 +600,28 @@ void Species::Reproduce(uint16_t count)
 
 Genome* Species::FindChampion(void)
 {
-	// TODO
-	return 0;
+	Genome* champion;
+	uint32_t bestFitness = UINT32_MAX;
+
+	// Go through the genomes, track the best one.
+	for(vector<Genome>::iterator
+		iterGenome = genomes.begin();
+		iterGenome != genomes.end();
+		iterGenome++)
+		if(iterGenome->fitness < bestFitness)
+		{
+			champion = &(*iterGenome);
+			bestFitness = iterGenome->fitness;
+		}
+
+	return champion;
 }
 
 
 void Population::PrintSummary(ostream& outstream)
 {
 	// Header
+	outstream	<< "\nGENERATION " << g_generationNumber << '\n';
 	outstream 	<< "====================================================\n"
 				<< "Species Created Genomes Stagnated       Best Fitness\n";
 
@@ -627,6 +641,8 @@ void Population::PrintSummary(ostream& outstream)
 
 	// Footer
 	outstream 	<< "----------------------------------------------------" << '\n';
+
+	// TODO: print best genome ID, species it belongs to, its fitness
 }
 
 
