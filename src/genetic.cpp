@@ -33,7 +33,7 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 
 	/* Perform the crossover.
 	 * Matching ConnectionGenes are copied over, if both enabled.
-	 * If one is enabled and the other isn't, copy occurs based on probability TODO
+	 * If one is enabled and the other isn't, copy occurs based on probability.
 	 * Excess genes are copied from the most fit parent.
 	 */
 
@@ -71,7 +71,7 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 			{
 				// Key of the new ConnectionGene (should be the same on mostFit, leastFit, and offspring)
 				pair<uint16_t,uint16_t> geneKey = iterGenesOnMostFit->first;
-				assert(geneKey == iterGeneOnLeastFit->first); // TODO remove
+				assert(geneKey == iterGeneOnLeastFit->first);
 
 				// Either (or both) are enabled, so do the copy 50/50
 				if(OneShotBernoulli(0.50))
@@ -114,18 +114,35 @@ double Compatibility(Genome* const gen1, Genome* const gen2)
 	double totalWeightDifference = 0.0;
 	double matchingGenes = 0.0;
 
+	// Assert whether connection vectors are sorted. TODO: remove this
+	if(gm_debug)
+	{
+		map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+			iterConn = gen1->connections.begin();
+		map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+			iterPrev = gen1->connections.begin();
+
+		for(advance(iterConn, 1);
+			iterConn != gen1->connections.end();
+			iterConn++)
+			{
+				if(iterConn->innovation <= iterPrev->innovation )
+					{ cout << "ERROR Connection vector not sorted." << endl; exit(1); }
+				iterPrev++;
+			}
+	}
+
 	// Find N, the #genes in the larger genome
 	uint16_t genesInLargerGenome = max(gen1->connections.size(), gen2->connections.size());
 
 	// Count disjoint and excess genes. Uses innovation.
-
 	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator iterGen1 = gen1->connections.begin();
 	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator iterGen2 = gen2->connections.begin();
 
 	// Loop until both iterators are at the end
 	while( !(iterGen1==gen1->connections.end()) or !(iterGen2==gen2->connections.end()) )
 	{
-		// TODO: are we sure that the connection vector is always ordered w.r.t. innovation? 
+		// Connection vector should be naturally sorted by innovation.
 		if( iterGen1==gen1->connections.end() )
 		{
 			// Gen1 ended, but Gen2 didn't (or the while() would have stopped),
@@ -424,7 +441,6 @@ void Genome::WipeMemory(void)
 /* Mutations
  */
 
-// TODO: individual links should be mutated probabilistically
 void Genome::MutatePerturbWeights(void)
 {
 	// Go through each connection, perturb its weight.

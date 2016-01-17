@@ -77,11 +77,15 @@ public:
 	uint16_t	to_node;
 	double		weight = 1.0;
 	bool		enabled = true;
-	uint16_t	innovation=0;
+	uint16_t	innovation;
 
 	ConnectionGene(){};
 	ConnectionGene(uint16_t from, uint16_t to, uint16_t innov, double weightin=1.0)
 		{ from_node = from; to_node = to, innovation = innov; weight=weightin;}
+
+	// Sorting performed by innovation (lowest value to highest -> earliest to latest)
+	bool operator < (const ConnectionGene& conn) const
+		{ return (innovation < conn.innovation); }
 };
 
 
