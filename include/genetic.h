@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <fstream>
 #include <cmath>
+#include <cfloat>
+#include <limits>
 
 #include <map>
 #include <vector>
@@ -94,8 +96,8 @@ public:
 	map<pair<uint16_t,uint16_t>, ConnectionGene> connections;
 
 	// The current fitness and adjusted fitness of this genome
-	uint32_t fitness = 0;
-	uint32_t adjFitness = 0;
+	double fitness = 0;
+	double adjFitness = 0;
 
 	// A unique random identifier for this genome.
 	uint64_t id = 0; 
@@ -125,10 +127,13 @@ public:
 	// If store==true, store each prediction in the database at database[i]->prediction;
 	double GetFitness(vector<DataEntry>* database, bool store=false);
 
+	// Prints the fitness calculations
+	void PrintGetFitness(vector<DataEntry>* database, ostream& outstream);
+
 	// Wipe the values inside the nodes.
 	void WipeMemory(void);
 
-	/* Mutations
+	/* Mutations1
 	 */
 	// Add a random value to the weights of this genome.
 	void MutatePerturbWeights(void);
@@ -162,12 +167,17 @@ public:
 class Species
 {
 public:
+	// Species ID, species generation of creation.
 	uint16_t id = UINT16_MAX; 
 	uint32_t creation = UINT32_MAX;
 	
 	double bestFitness = DBL_MAX;	// Best possible fitness is=0
-	uint16_t lastFitnessImproved=0;
+	uint32_t lastImprovementGeneration=0;
 
+	// For tracking the species champion.
+	Genome* champion;
+
+	// Main vector of this species' genomes.
 	vector<Genome> genomes;
 
 	// Constructor, require speciesID
@@ -189,16 +199,18 @@ class Population
 {
 public:
 	double bestFitness = DBL_MAX;	// Best possible fitness is=0
-	uint16_t bestFitnessGeneration=0;
+	Species* bestSpecies;
+	Genome* superChampion;
 
+	// Main vector of this populations' species.
 	vector<Species> species;
 
 	// How many species we aim to get
 	// uint16_t targetNumber=10;
 
-	// Go through every species and genome, update its fitness value,
+	// Go through every species, update its fitness value,
 	// counters, champions, and then the population's own best.
-	void UpdateStatistics(void);
+	void UpdateSpeciesAndPopulation(void);
 
 	// Prints a summary of the population: best fitness so far, list of species, statistics.
 	void PrintSummary(ostream& outstream);
