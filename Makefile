@@ -3,7 +3,7 @@
 
 CC=g++
 CXXFLAGS=-c -O2 -std=c++11 -Wall --pedantic -Wno-unused-variable
-LDFLAGS=-O2
+LDFLAGS=
 
 INCLUDEDIR=include
 SRCDIR=src

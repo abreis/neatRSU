@@ -25,6 +25,10 @@ extern bool gm_debug;
 extern uint32_t g_generationNumber;
 extern const uint16_t g_inputs;
 extern map<uint16_t,string> g_nodeNames;
+// Warning: these are IDs (suitable for e.g. std::map), not vector indices
+extern uint16_t d_outputnode;
+extern uint16_t d_biasnode;
+extern uint16_t d_firsthidnode;
 
 extern float gm_compat_excess;
 extern float gm_compat_disjoint; 
@@ -42,10 +46,7 @@ extern float g_m_p_mateOnly;
 extern boost::random::mt19937 					g_rng;
 extern boost::random::normal_distribution<> 	g_rnd_gauss;
 
-// Warning: these are IDs (suitable for e.g. std::map), not vector indices
-#define d_outputnode g_inputs+1
-#define d_biasnode g_inputs+2
-#define d_firsthidnode g_inputs+3
+
 
 /* Functions
    --------- */

@@ -7,11 +7,6 @@ bool gm_debug = false;
 // Global generation counter
 uint32_t g_generationNumber = 0;
 
-/* Number of inputs in the system and node names
- * g_inputs+1 -> output node
- * g_inputs+2 -> bias node
- * g_inputs+3 -> first hidden node
- */ 
 const uint16_t g_inputs = 6;
 map<uint16_t,string> g_nodeNames = 
 {
@@ -23,7 +18,15 @@ map<uint16_t,string> g_nodeNames =
 	{6, "bearing"},
 	{7, "output"},
 	{8, "bias"}
-};
+};/* Number of inputs in the system and node names
+ * g_inputs+1 -> output node
+ * g_inputs+2 -> bias node
+ * g_inputs+3 -> first hidden node
+ */
+uint16_t d_outputnode = g_inputs+1;
+uint16_t d_biasnode = g_inputs+2;
+uint16_t d_firsthidnode = g_inputs+3;
+
 
 float gm_compat_excess 		= 1.0;
 float gm_compat_disjoint 	= 1.0;
@@ -315,10 +318,8 @@ int main(int argc, char *argv[])
 			// TODO fitness is "lowest is best", so the smallest sum of fitness is the best species
 			// uint16_t newSpeciesPopulation = m_maxPop; cout << "MAXPOP " << m_maxPop << endl;
 
-		cout << "MAXPOP HERE3 " << m_maxPop << endl;
 			// Reproduce
 			iterSpecies->Reproduce(m_maxPop);
-		cout << "MAXPOP HERE4 " << m_maxPop << endl;
 
 
 		} // END SPECIES ITERATION
@@ -374,7 +375,7 @@ int main(int argc, char *argv[])
 	 *** Z0 Wrap up
 	 ***/
 
-
+	delete population;
 
 	return 0;
 }

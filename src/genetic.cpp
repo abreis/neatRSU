@@ -97,7 +97,7 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 	// Now add all necessary nodes
 	offspring.nodes = mostFitGenome->nodes;
 
-	if(gm_debug) cout << "DEBUG Mating " << hex << mostFitGenome->id << " with " << leastFitGenome->id << " birthing " << offspring.id << endl;
+	if(gm_debug) cout << "DEBUG Mating " << hex << mostFitGenome->id << " with " << leastFitGenome->id << " birthing " << offspring.id << dec << endl;
 
 	return offspring;
 }
@@ -675,7 +675,11 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 				// Perform mating, locate a second parent
 				boost::random::uniform_int_distribution<> randomParent(0, genomes.size()-1);
 				// Genome parent2 = genomes[randomParent(g_rng)];
-				child = MateGenomes(&(*iterGenomes), &genomes[randomParent(g_rng)]);
+				vector<Genome>::iterator iterParent2;
+				iterParent2 = genomes.begin();
+				advance(iterParent2, randomParent(g_rng));
+
+				child = MateGenomes(&(*iterGenomes), &(*iterParent2));
 
 				// Probability that we only mate. If not, we mutate/perturb the child as well.
 				if(!OneShotBernoulli(g_m_p_mateOnly))
