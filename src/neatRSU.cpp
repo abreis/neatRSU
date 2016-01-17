@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
 	 */
 
 
+
+
 	/***
 	 *** A0 Process command-line options
 	 ***/
@@ -124,6 +126,8 @@ int main(int argc, char *argv[])
 	if (varMap.count("print-fitness-file"))			m_printFitnessFile 		= varMap["print-fitness-file"].as<string>();
 
 	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
+
+
 
 
 	/***
@@ -210,6 +214,8 @@ int main(int argc, char *argv[])
 	}
 
 
+
+
 	/***
 	 *** A3 Initialize global Random Number Generators
 	 ***/
@@ -226,6 +232,8 @@ int main(int argc, char *argv[])
 
 	// To draw random integers (e.g. to randomly select a node), use:
 	// boost::random::uniform_int_distribution<> dist(min, max);
+
+
 
 
 	/***
@@ -245,7 +253,11 @@ int main(int argc, char *argv[])
 
 	// Push the first genome
 	firstSpecies.genomes.push_back( Genome(g_inputs) );
+	firstSpecies.champion = &( firstSpecies.genomes.front() ); 
+
 	population->species.push_back(firstSpecies);
+
+
 
 
 	/***
@@ -257,49 +269,41 @@ int main(int argc, char *argv[])
 	{
 		if(gm_debug) cout << "DEBUG Generation " << g_generationNumber << endl;
 
-		/* Generation loop initial setup
+		/* Initial setup for Generation loop.
 		 */ 
-		double l_totalFitness = 0.0;
-		double l_meanModifiedFitness = 0.0;
 
-		/* Iterate for mutations
+
+
+
+
+		/* C1 Go through every genome: update fitness.
 		 */
-
-		// Go through each species
 		for(vector<Species>::iterator 
 			iterSpecies = population->species.begin();
 			iterSpecies != population->species.end();
 			iterSpecies++)
-		{
-			// Go through each genome in this species.
-			// Using a reverse iterator lets us avoid processing new genomes we tack on.
-			// for(vector<Genome>::reverse_iterator
-			// 	iterGenome = iterSpecies->genomes.rbegin();
-			// 	iterGenome != iterSpecies->genomes.rend();
-			// 	iterGenome++)
-			// {
-
-
-			// } // END GENOME ITERATION (MUTATION)
-
-			// Compute and store the fitness of each Genome
 			for(vector<Genome>::iterator
 				iterGenome = iterSpecies->genomes.begin();
 				iterGenome != iterSpecies->genomes.end();
 				iterGenome++)
 				iterGenome->fitness = iterGenome->GetFitness(&TrainingDB);
 
-			// TODO Convert fitness to adjustedFitness
 
 
 
 
-			/* Eliminate the lowest performing members from the population.
-			 */
-
+		/* C5 Eliminate the lowest performing members from the species.
+		 * Requires: up-to-date fitness on all genomes.
+		 */
+		for(vector<Species>::iterator 
+			iterSpecies = population->species.begin();
+			iterSpecies != population->species.end();
+			iterSpecies++)
+		{
 			// Sort the vector of Genomes by fitness.
 			sort(iterSpecies->genomes.begin(), iterSpecies->genomes.end());
-			// Sorting puts the lowest value, and therefore the highest fitness, last.
+
+			// Sorting puts the lowest value (and therefore the highest fitness) last.
 			// Determine how many Genomes we're pop-ing out, based on survival metric.
 			uint16_t noSurvivors = iterSpecies->genomes.size() * m_survival_threshold;
 			if(gm_debug) cout << "DEBUG Killing " << noSurvivors << " from species id " << iterSpecies->id << " size " << iterSpecies->genomes.size() << '\n';
@@ -309,38 +313,100 @@ int main(int argc, char *argv[])
 				for(uint16_t killCount = 0; killCount < noSurvivors; killCount++)
 					iterSpecies->genomes.pop_back();
 
-			/* TODO Perform intra-species mating
-			 */
+		} // END SPECIES ITERATION
 
-			// Determine how many offspring we can have
-			// TODO use a ratio of sum(adjustedFitness)
-			// May need to do a separate Species cycle where all the fitness is known.
-			// TODO fitness is "lowest is best", so the smallest sum of fitness is the best species
-			// uint16_t newSpeciesPopulation = m_maxPop; cout << "MAXPOP " << m_maxPop << endl;
 
-			// Reproduce
+
+
+
+		/* C6 Update species and population statistics, track the champions.
+		 * Requires: up-to-date fitness on all genomes.
+		 */
+		// Update each species' champion, best fitness, generation update
+		population->UpdateSpeciesAndPopulation();
+
+
+
+
+
+
+		/* C5b Intra-species mating and reproduction. 
+		 * Requires: updated fitnesses.
+		 */
+		for(vector<Species>::iterator 
+			iterSpecies = population->species.begin();
+			iterSpecies != population->species.end();
+			iterSpecies++)
 			iterSpecies->Reproduce(m_maxPop);
 
 
-		} // END SPECIES ITERATION
 
-		/* Speciation
+
+
+
+
+
+
+		/* C4 Go through every genome and place it in a species according to its compatibility.
+		 * Requires: Knowing champions of each species, pre-mating.
 		 */
 
-			// TODO need an updateSpecies routine that updates the best fitness of all species and keeps track of last time fitness improved.
+		// We create the new population here
+		Population* newPopulation = new Population();
+		
+		// Store the previous species and their champions
+		for(vector<Species>::iterator 
+			iterSpecies = population->species.begin();
+			iterSpecies != population->species.end();
+			iterSpecies++)
+		{
+			// Clone each species with only the champion genome on them.
+			Species speciesCopy = Species(iterSpecies->id, iterSpecies->creation);
+			speciesCopy.genomes.push_back( *(iterSpecies->champion) );
+			speciesCopy.champion = &( speciesCopy.genomes.front() );
 
-		// Create a new Population with all of the species, but with a single champion genome on each species.
-		// Run through all Genomes on all species, matching their compatibility to the champion of each species.
-		// Champions are always the first genome in the vector<species>, species.begin()
-		// Create a new species if compatibility>m_compat_threshold for all existing species
-		// If compatibility == 0, do nothing, it's a clone or the champion itself.
-		// Clear out empty species (how do species extinguish themselves?)
-		// Replace main Population* pointer. Delete old Population.
-
-		// TODO may need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
+			// Push them to the new population
+			newPopulation->species.push_back( speciesCopy );
+		}
 
 
-		/* Generation end post-processing
+		// Now go through the old population and copy genomes over according to the best compatibility match. 
+		// TODO if(genome.id == champion.id) no copy;
+		// TODO
+
+		// Go through each species
+		for(vector<Species>::iterator 
+			iterSpecies = population->species.begin();
+			iterSpecies != population->species.end();
+			iterSpecies++)
+			// Go through each genome
+			for(vector<Genome>::iterator
+				iterGenome = iterSpecies->genomes.begin();
+				iterGenome != iterSpecies->genomes.end();
+				iterGenome++)
+			{
+				// Compute compatibility
+				// map<
+			
+
+
+			}
+
+		// We now have a new, sorted population.
+		// Replace population with new population.
+		delete population;
+		population = newPopulation;
+
+
+
+
+
+
+
+
+
+
+		/* CZ Output requested statistics.
 		 */
 
 		if(m_printPopulation)
@@ -364,16 +430,49 @@ int main(int argc, char *argv[])
 			population->PrintFitness(ofFitness);
 		}
 
+
+
+
+
+		// TODO Convert fitness to adjustedFitness
+
+		// Determine how many offspring we can have
+		// TODO use a ratio of sum(adjustedFitness)
+		// May need to do a separate Species cycle where all the fitness is known.
+		// TODO fitness is "lowest is best", so the smallest sum of fitness is the best species
+
+		/* Speciation
+		 */
+
+		// TODO need an updateSpecies routine that updates the best fitness of all species and keeps track of last time fitness improved.
+
+		// Create a new Population with all of the species, but with a single champion genome on each species.
+		// Run through all Genomes on all species, matching their compatibility to the champion of each species.
+		// Champions are always the first genome in the vector<species>, species.begin()
+		// Create a new species if compatibility>m_compat_threshold for all existing species
+		// If compatibility == 0, do nothing, it's a clone or the champion itself.
+		// Clear out empty species (how do species extinguish themselves?)
+		// Replace main Population* pointer. Delete old Population.
+
+		// TODO may need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
+
+
+
 	// Generation loop control
 	g_generationNumber++;
 	} while( g_generationNumber < m_genmax );	// Specify stopping criteria here
 
 
-
-
 	/***
 	 *** Z0 Wrap up
 	 ***/
+
+	// Print the super champion.
+	population->UpdateSpeciesAndPopulation();
+
+	population->superChampion->Print(cout);
+	population->superChampion->PrintToGV("superChampion.gv");
+
 
 	delete population;
 
@@ -401,6 +500,9 @@ bool sortIdThenTime( DataEntry const &first, DataEntry const &second )
 			else 
 				return false;
 }
+
+
+
 
 
 // // Push a DataEntry through it

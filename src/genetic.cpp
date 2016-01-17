@@ -126,7 +126,7 @@ double Compatibility(Genome* const gen1, Genome* const gen2)
 			iterConn != gen1->connections.end();
 			iterConn++)
 			{
-				if(iterConn->innovation <= iterPrev->innovation )
+				if(iterConn->second.innovation <= iterPrev->second.innovation )
 					{ cout << "ERROR Connection vector not sorted." << endl; exit(1); }
 				iterPrev++;
 			}
@@ -820,28 +820,27 @@ void Population::UpdateSpeciesAndPopulation(void)
 		iterSpecies->champion = iterSpecies->FindChampion();
 
 		// The champion is always kept intact, so the following must be true:
-		assert(iterSpecies->champion.fitness <= iterSpecies->bestFitness);
+		assert(iterSpecies->champion->fitness <= iterSpecies->bestFitness);
 
 		// If the champion's fitness improved since the last generation, we record that.
-		if(iterSpecies->champion.fitness < iterSpecies->bestFitness)
+		if(iterSpecies->champion->fitness < iterSpecies->bestFitness)
 		{
 			iterSpecies->lastImprovementGeneration = g_generationNumber;
-			iterSpecies->bestFitness = iterSpecies->champion.fitness;
+			iterSpecies->bestFitness = iterSpecies->champion->fitness;
 		}
 	}
 
 	// Now find the best species
-	Species* bestSpecies = species.front();
+	Species* bestSpecies = &( species.front() );
 
 	for(vector<Species>::iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
 		iterSpecies++)
-	{
-		if(iterSpecies->fitness < bestSpecies->fitness)
+		if(iterSpecies->bestFitness < bestSpecies->bestFitness)
 			bestSpecies = &(*iterSpecies);
-	}
-	bestFitness = bestSpecies->fitness;
+
+	bestFitness = bestSpecies->bestFitness;
 	superChampion = bestSpecies->champion;
 }
 
