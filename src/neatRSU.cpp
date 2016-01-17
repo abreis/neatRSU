@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 		 * Requires: up-to-date fitness on all genomes.
 		 */
 		// Update each species' champion, best fitness, generation update
-		population->UpdateSpeciesAndPopulation();
+		population->UpdateSpeciesAndPopulationStats();
 
 
 
@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
 	 ***/
 
 	// Print the super champion.
-	population->UpdateSpeciesAndPopulation();
+	population->UpdateSpeciesAndPopulationStats();
 
 	population->superChampion->Print(cout);
 	population->superChampion->PrintToGV("superChampion.gv");

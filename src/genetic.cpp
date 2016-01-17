@@ -213,8 +213,7 @@ double Compatibility(Genome* const gen1, Genome* const gen2)
 }
 
 
-/* CLASS Genome
- */
+/* GENOME */
 
 
 Genome::Genome(){ id = ( ( (uint64_t)g_rng() ) << 32 ) | g_rng(); }
@@ -339,6 +338,7 @@ double Genome::Activate(DataEntry data)
 		iterNode->second.valueNow = 0.0;
 	}
 	nodes[d_biasnode].valueNow = 1.0; // Don't touch the bias
+	nodes[d_biasnode].valueLast = 1.0;
 
 	// Run through each connection
 	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
@@ -372,6 +372,9 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 {
 	double rfitness = 0.0;
 
+	// Reset genome.
+	this->ResetNodes();
+
 	/* Go through every entry. Perform an activation, get the prediction.
 	 * Sum the square of errors.
 	 * IMPORTANT: the entry database must be sorted logically for recurrent networks to make sense 
@@ -387,7 +390,7 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 	}
 
 	if( isinf(rfitness) )
-		{ cout << "ISINF!" << endl; return DBL_MAX;}
+		return DBL_MAX;
 	return rfitness;
 }
 
@@ -537,10 +540,6 @@ void Genome::MutateAddNode(void)
 }
 
 
-/* Auxiliary
- */
-
-
 uint16_t Genome::CountEnabledGenes(void)
 {
 	uint16_t count = 0;
@@ -550,6 +549,16 @@ uint16_t Genome::CountEnabledGenes(void)
 		iterConn++)
 		if(iterConn->second.enabled) count++;
 	return count;
+}
+
+
+void Genome::ResetNodes(void)
+{
+	for(map<uint16_t, NodeGene>::iterator 
+		iterNode = nodes.begin();
+		iterNode != nodes.end();
+		iterNode++)
+	{ iterNode->second.valueNow = 0.0; iterNode->second.valueLast = 0.0; }
 }
 
 
@@ -657,10 +666,11 @@ void Genome::PrintToGV(string filename)
 }
 
 
+/* SPECIES */
+
+
 void Species::Reproduce(uint16_t targetSpeciesSize)
 {
-	this->Print(cout);
-
 	// Restrain the species to doubling in size, at most, on each iteration
 	uint16_t targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size());
 
@@ -805,7 +815,10 @@ void Species::Print(ostream& outstream)
 }
 
 
-void Population::UpdateSpeciesAndPopulation(void)
+/* POPULATION */
+
+
+void Population::UpdateSpeciesAndPopulationStats(void)
 {
 	for(vector<Species>::iterator 
 		iterSpecies = species.begin();

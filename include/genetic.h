@@ -154,6 +154,9 @@ public:
 	// Count the number of ConnectionGenes that are not disabled.
 	uint16_t CountEnabledGenes(void);
 
+	// Resets the nodes' memories.
+	void ResetNodes();
+
 	// Print the contents of this Genome
 	void Print(ostream& outstream);
 
@@ -214,7 +217,7 @@ public:
 
 	// Go through every species, update its fitness value,
 	// counters, champions, and then the population's own best.
-	void UpdateSpeciesAndPopulation(void);
+	void UpdateSpeciesAndPopulationStats(void);
 
 	// Prints a summary of the population: best fitness so far, list of species, statistics.
 	void PrintSummary(ostream& outstream);
