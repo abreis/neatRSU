@@ -328,8 +328,6 @@ int main(int argc, char *argv[])
 
 
 
-
-
 		/* C5b Intra-species mating and reproduction. 
 		 * Requires: updated fitnesses.
 		 */
@@ -347,59 +345,55 @@ int main(int argc, char *argv[])
 
 
 
-		/* C4 Go through every genome and place it in a species according to its compatibility.
-		 * Requires: Knowing champions of each species, pre-mating.
-		 */
+		// /* C4 Go through every genome and place it in a species according to its compatibility.
+		//  * Requires: Knowing champions of each species, pre-mating.
+		//  */
 
-		// We create the new population here
-		Population* newPopulation = new Population();
+		// // We create the new population here
+		// Population* newPopulation = new Population();
 		
-		// Store the previous species and their champions
-		for(vector<Species>::iterator 
-			iterSpecies = population->species.begin();
-			iterSpecies != population->species.end();
-			iterSpecies++)
-		{
-			// Clone each species with only the champion genome on them.
-			Species speciesCopy = Species(iterSpecies->id, iterSpecies->creation);
-			speciesCopy.genomes.push_back( *(iterSpecies->champion) );
-			speciesCopy.champion = &( speciesCopy.genomes.front() );
+		// // Store the previous species and their champions
+		// for(vector<Species>::iterator 
+		// 	iterSpecies = population->species.begin();
+		// 	iterSpecies != population->species.end();
+		// 	iterSpecies++)
+		// {
+		// 	// Clone each species with only the champion genome on them.
+		// 	Species speciesCopy = Species(iterSpecies->id, iterSpecies->creation);
+		// 	speciesCopy.genomes.push_back( *(iterSpecies->champion) );
+		// 	speciesCopy.champion = &( speciesCopy.genomes.front() );
 
-			// Push them to the new population
-			newPopulation->species.push_back( speciesCopy );
-		}
+		// 	// Push them to the new population
+		// 	newPopulation->species.push_back( speciesCopy );
+		// }
 
 
-		// Now go through the old population and copy genomes over according to the best compatibility match. 
-		// TODO if(genome.id == champion.id) no copy;
-		// TODO
+		// // Now go through the old population and copy genomes over according to the best compatibility match. 
+		// // TODO if(genome.id == champion.id) no copy;
+		// // TODO
 
-		// Go through each species
-		for(vector<Species>::iterator 
-			iterSpecies = population->species.begin();
-			iterSpecies != population->species.end();
-			iterSpecies++)
-			// Go through each genome
-			for(vector<Genome>::iterator
-				iterGenome = iterSpecies->genomes.begin();
-				iterGenome != iterSpecies->genomes.end();
-				iterGenome++)
-			{
-				// Compute compatibility
-				// map<
+		// // Go through each species
+		// for(vector<Species>::iterator 
+		// 	iterSpecies = population->species.begin();
+		// 	iterSpecies != population->species.end();
+		// 	iterSpecies++)
+		// 	// Go through each genome
+		// 	for(vector<Genome>::iterator
+		// 		iterGenome = iterSpecies->genomes.begin();
+		// 		iterGenome != iterSpecies->genomes.end();
+		// 		iterGenome++)
+		// 	{
+		// 		// Compute compatibility
+		// 		// map<
 			
 
 
-			}
+		// 	}
 
-		// We now have a new, sorted population.
-		// Replace population with new population.
-		delete population;
-		population = newPopulation;
-
-
-
-
+		// // We now have a new, sorted population.
+		// // Replace population with new population.
+		// delete population;
+		// population = newPopulation;
 
 
 
@@ -435,11 +429,7 @@ int main(int argc, char *argv[])
 
 
 		// TODO Convert fitness to adjustedFitness
-
-		// Determine how many offspring we can have
 		// TODO use a ratio of sum(adjustedFitness)
-		// May need to do a separate Species cycle where all the fitness is known.
-		// TODO fitness is "lowest is best", so the smallest sum of fitness is the best species
 
 		/* Speciation
 		 */

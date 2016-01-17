@@ -466,8 +466,8 @@ void Genome::MutateAddConnection(void)
 	// 'from' can be anything, 'to' must exclude inputs and bias, but not output
 	// Also note we are using iterator indices, so always go (0,dest-1)
 	// We use a trick here, to be able to pick the output node
-	boost::random::uniform_int_distribution<> randomSrcNode(0, nodes.size()-1); 
-	boost::random::uniform_int_distribution<> randomDstNode(d_firsthidnode-1, nodes.size());
+	boost::random::uniform_int_distribution<> randomSrcNode(0, (int)(nodes.size()-1) ); 
+	boost::random::uniform_int_distribution<> randomDstNode(d_firsthidnode-1, (int)(nodes.size()) );
 	
 	// This could fail on the (unlikely) event that the network is fully connected, so we limit
 	// the number of tries. E.g. 6 inputs 1 bias 1 output 1 hidden node: 8 tries, 2 hidden nodes: 16 tries 
@@ -511,7 +511,7 @@ void Genome::MutateAddNode(void)
 	// Pick a random connection.
 	// Create a random variable that runs from 0 to #nconnections-1
 	// A [0,n-1] range lets us use std::advance more easily later on
-	boost::random::uniform_int_distribution<> randomConnection(0, connections.size()-1);
+	boost::random::uniform_int_distribution<> randomConnection(0, (int)(connections.size()-1) );
 
 	// Get a connection that isn't disabled
 	map<pair<uint16_t,uint16_t>, ConnectionGene>::iterator iterConnection;
@@ -567,7 +567,7 @@ void Genome::Print(ostream& outstream)
 		iterNode = nodes.begin();
 		iterNode != nodes.end();
 		iterNode++)
-		outstream << ( (iterNode->second.type==NodeType::SENSOR)?"Sen ":( (iterNode->second.type==NodeType::HIDDEN)?"Hid ":"Out " ) ); outstream << '\n';
+		outstream << ( (iterNode->second.type==NodeType::SENSOR)?"Sen ":( (iterNode->second.type==NodeType::HIDDEN)?"Hid ":"Out " ) ); outstream << '\n'; // TODO Bia
 	for(uint16_t i = nodes.size(); i>0; i--)
 		outstream << "----"; outstream << '\n';
 
@@ -729,7 +729,7 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 			// We mate
 			{
 				// Perform mating, locate a second parent
-				boost::random::uniform_int_distribution<> randomParent(0, genomes.size()-1);
+				boost::random::uniform_int_distribution<> randomParent(0, (int)(genomes.size()-1) );
 				// Genome parent2 = genomes[randomParent(g_rng)];
 				vector<Genome>::iterator iterParent2;
 				iterParent2 = genomes.begin();
@@ -767,19 +767,15 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 
 Genome* Species::FindChampion(void)
 {
-	Genome* champion;
-	uint32_t bestFitness = UINT32_MAX;
+	Genome* champion = &( genomes.front() );
 
 	// Go through the genomes, track the best one.
 	for(vector<Genome>::iterator
 		iterGenome = genomes.begin();
 		iterGenome != genomes.end();
 		iterGenome++)
-		if(iterGenome->fitness < bestFitness)
-		{
+		if(iterGenome->fitness < champion->fitness)
 			champion = &(*iterGenome);
-			bestFitness = iterGenome->fitness;
-		}
 
 	return champion;
 }
@@ -825,7 +821,7 @@ void Population::UpdateSpeciesAndPopulation(void)
 		// If the champion's fitness improved since the last generation, we record that.
 		if(iterSpecies->champion->fitness < iterSpecies->bestFitness)
 		{
-			iterSpecies->lastImprovementGeneration = g_generationNumber;
+			iterSpecies->lastImprovementGeneration = g_generationNumber; 
 			iterSpecies->bestFitness = iterSpecies->champion->fitness;
 		}
 	}
