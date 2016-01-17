@@ -179,6 +179,9 @@ public:
 
 	// Finds the best genome in the species and returns a pointer to it.
 	Genome* FindChampion(void);
+
+	// Prints a summary of the species statistics and its genomes.
+	void Print(ostream& outstream);
 };
 
 // A population.

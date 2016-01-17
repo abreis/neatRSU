@@ -97,7 +97,11 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 	// Now add all necessary nodes
 	offspring.nodes = mostFitGenome->nodes;
 
-	if(gm_debug) cout << "DEBUG Mating " << hex << mostFitGenome->id << " with " << leastFitGenome->id << " birthing " << offspring.id << dec << endl;
+	if(gm_debug) 
+		cout 	<< "DEBUG Mating " << hex 
+				<< setw(16) << firstParent->id << " with " 
+				<< setw(16) << secondParent->id << " birthing " 
+				<< setw(16) << offspring.id << dec << endl;
 
 	return offspring;
 }
@@ -605,6 +609,8 @@ void Genome::PrintToGV(string filename)
 
 void Species::Reproduce(uint16_t targetSpeciesSize)
 {
+	this->Print(cout);
+
 	// Restrain the species to doubling in size, at most, on each iteration
 	uint16_t targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size());
 
@@ -648,7 +654,7 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 
 		// Everyone mates and mutates in order, most fit genomes go first
 		// TODO bias towards more fit genomes having more offspring
-		while( (offsprings.size() < targetSpeciesSizeAdj) and (iterGenomes != genomes.end()) )
+		while( offsprings.size() < targetSpeciesSizeAdj )
 		{
 			// Clone the main parent
 			Genome child;
@@ -697,7 +703,7 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 			}
 
 			offsprings.push_back(child);
-			iterGenomes++;
+			iterGenomes++; if(iterGenomes == genomes.end()) iterGenomes = genomes.begin(); 
 		}
 	}
 	
@@ -729,6 +735,30 @@ Genome* Species::FindChampion(void)
 }
 
 
+void Species::Print(ostream& outstream)
+{
+	// Header
+	outstream 	<< "SPECIES " << id << '\n'
+				<< "===========================================================\n"
+				<< "Genome                  Fitness         Nodes   Connections\n";
+
+	// Print the list of genomes on this species.
+	for(vector<Genome>::iterator
+		iterGenome = genomes.begin();
+		iterGenome != genomes.end();
+		iterGenome++)
+		outstream 	<< hex << setw(16) << iterGenome->id << dec << '\t' 
+					<< setw(10) << iterGenome->fitness << '\t'
+					// << iterGenome->adjFitness << '\t'
+					<< iterGenome->nodes.size() << '\t'
+					<< iterGenome->connections.size()
+					<< '\n';
+
+	//Footer
+	outstream 	<< "-----------------------------------------------------------\n";
+}
+
+
 void Population::UpdateStatistics(void)
 {
 	// TODO
@@ -738,8 +768,8 @@ void Population::UpdateStatistics(void)
 void Population::PrintSummary(ostream& outstream)
 {
 	// Header
-	outstream	<< "\nGENERATION " << g_generationNumber << '\n';
-	outstream 	<< "====================================================\n"
+	outstream	<< "\nGENERATION " << g_generationNumber << '\n'
+			 	<< "====================================================\n"
 				<< "Species Created Genomes Stagnated       Best Fitness\n";
 
 	// Go through species.
