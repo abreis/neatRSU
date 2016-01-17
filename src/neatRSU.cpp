@@ -237,6 +237,24 @@ int main(int argc, char *argv[])
 
 
 	/***
+	 *** A4 Prepare output streams
+	 ***/
+
+	static ofstream ofPopSummary, ofSpeciesStack, ofFitness;
+
+	if(!m_printPopulationFile.empty()) 
+		ofPopSummary.open(m_printPopulationFile.c_str());
+
+	if(!m_printSpeciesStackFile.empty())
+		ofSpeciesStack.open(m_printSpeciesStackFile.c_str());
+
+	if(!m_printFitnessFile.empty())
+		ofFitness.open(m_printFitnessFile.c_str());
+
+
+
+
+	/***
 	 *** B0 Setup neural network
 	 ***/
 
@@ -407,22 +425,13 @@ int main(int argc, char *argv[])
 			population->PrintSummary(cout);
 
 		if(!m_printPopulationFile.empty()) 
-		{
-			static ofstream ofPopSummary(m_printPopulationFile.c_str());
-			population->PrintSummary(ofPopSummary);
-		}
+			{ population->PrintSummary(ofPopSummary); ofPopSummary.flush(); }
 
 		if(!m_printSpeciesStackFile.empty())
-		{
-			static ofstream ofSpeciesStack(m_printSpeciesStackFile.c_str());
-			population->PrintVerticalSpeciesStack(ofSpeciesStack);
-		}
+			{ population->PrintVerticalSpeciesStack(ofSpeciesStack); ofSpeciesStack.flush(); }
 
 		if(!m_printFitnessFile.empty())
-		{
-			static ofstream ofFitness(m_printFitnessFile.c_str());
-			population->PrintFitness(ofFitness);
-		}
+			{ population->PrintFitness(ofFitness); ofFitness.flush(); }
 
 
 

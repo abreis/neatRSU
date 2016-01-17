@@ -871,7 +871,7 @@ void Population::PrintSummary(ostream& outstream)
 		outstream 	<< iterSpecies->id << '\t' 
 					<< iterSpecies->creation << '\t'
 					<< iterSpecies->genomes.size() << '\t'
-					<< iterSpecies->lastImprovementGeneration << '\t'
+					<< (g_generationNumber - iterSpecies->lastImprovementGeneration) << '\t'
 					<< '\t' << iterSpecies->bestFitness << '\n';
 	}
 
