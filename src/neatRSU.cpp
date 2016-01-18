@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 		float deltaThreshold = 0.01;
 		if(m_targetSpecies)
 		{
-			if(!f_reachedTargetSpecies and (population->species.size() > m_targetSpecies ) )
+			if( (!f_reachedTargetSpecies) and (population->species.size() > m_targetSpecies ) )
 				f_reachedTargetSpecies=true;
 			if(f_reachedTargetSpecies)
 			{

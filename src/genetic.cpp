@@ -678,44 +678,32 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 		list<Genome>::iterator iterGenomes;
 		iterGenomes = genomes.begin();
 
+		uint16_t genomeIndex = 1;
+
 		// Everyone mates and mutates in order, most fit genomes go first
 		// TODO bias towards more fit genomes having more offspring
 		while( offsprings.size() < targetSpeciesSizeAdj )
 		{
-			// Clone the main parent
-			Genome child;
+			// We want the top genome to have 3x more chance to mate.
+			const float multiplier = 3.0;
+			// Linear equation
+			float mm = (multiplier-1.0)/(1.0-(float)genomes.size());
+			float bb = multiplier-mm;
 
-			// Probability that we only mutate/perturb. Offspring is parent, mutated.
-			if(OneShotBernoulli(g_m_p_mutateOnly))
+			// This gives more chances to mate to the first genomes.
+			uint16_t repeatProcreation = mm*(float)genomeIndex+bb; 
+			
+			while( (repeatProcreation>0) and (offsprings.size() < targetSpeciesSizeAdj) )
 			{
-				child = *iterGenomes;
-				child.RandomizeID();
+				// Clone the main parent
+				Genome child;
 
-				// Perturb or mutate
-				if(OneShotBernoulli(g_m_p_mutate_addnode))
-					child.MutateAddNode();
-				else if(OneShotBernoulli(g_m_p_mutate_addconn))
-					child.MutateAddConnection();
-				else
-					if(OneShotBernoulli(g_m_p_mutate_weights))
-						child.MutatePerturbWeights();
-				mutateCount++;
-			}
-			else 	
-			// We mate
-			{
-				// Perform mating, locate a second parent
-				boost::random::uniform_int_distribution<> randomParent(0, (int)(genomes.size()-1) );
-				// Genome parent2 = genomes[randomParent(g_rng)];
-				list<Genome>::iterator iterParent2;
-				iterParent2 = genomes.begin();
-				advance(iterParent2, randomParent(g_rng));
-
-				child = MateGenomes(&(*iterGenomes), &(*iterParent2));
-
-				// Probability that we only mate. If not, we mutate/perturb the child as well.
-				if(!OneShotBernoulli(g_m_p_mateOnly))
+				// Probability that we only mutate/perturb. Offspring is parent, mutated.
+				if(OneShotBernoulli(g_m_p_mutateOnly))
 				{
+					child = *iterGenomes;
+					child.RandomizeID();
+
 					// Perturb or mutate
 					if(OneShotBernoulli(g_m_p_mutate_addnode))
 						child.MutateAddNode();
@@ -724,12 +712,42 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 					else
 						if(OneShotBernoulli(g_m_p_mutate_weights))
 							child.MutatePerturbWeights();
+					mutateCount++;
 				}
-				mateCount++;
-			}
+				else 	
+				// We mate
+				{
+					// Perform mating, locate a second parent
+					boost::random::uniform_int_distribution<> randomParent(0, (int)(genomes.size()-1) );
+					// Genome parent2 = genomes[randomParent(g_rng)];
+					list<Genome>::iterator iterParent2;
+					iterParent2 = genomes.begin();
+					advance(iterParent2, randomParent(g_rng));
 
-			offsprings.push_back(child);
-			iterGenomes++; if(iterGenomes == genomes.end()) iterGenomes = genomes.begin(); 
+					child = MateGenomes(&(*iterGenomes), &(*iterParent2));
+
+					// Probability that we only mate. If not, we mutate/perturb the child as well.
+					if(!OneShotBernoulli(g_m_p_mateOnly))
+					{
+						// Perturb or mutate
+						if(OneShotBernoulli(g_m_p_mutate_addnode))
+							child.MutateAddNode();
+						else if(OneShotBernoulli(g_m_p_mutate_addconn))
+							child.MutateAddConnection();
+						else
+							if(OneShotBernoulli(g_m_p_mutate_weights))
+								child.MutatePerturbWeights();
+					}
+					mateCount++;
+				}
+
+				offsprings.push_back(child);
+				repeatProcreation--;		
+			}
+	
+			iterGenomes++; genomeIndex++;
+			if(iterGenomes == genomes.end()) 
+				{ iterGenomes = genomes.begin(); genomeIndex = 1;}
 		}
 	}
 	
