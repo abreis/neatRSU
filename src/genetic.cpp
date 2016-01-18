@@ -809,7 +809,7 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 	}
 
 	// Now find the best species
-	Species* bestSpecies = &( species.front() );
+	bestSpecies = &( species.front() );
 
 	for(list<Species>::iterator 
 		iterSpecies = species.begin();
@@ -837,7 +837,8 @@ void Population::PrintSummary(ostream& outstream)
 		iterSpecies != species.end();
 		iterSpecies++)
 	{
-		outstream 	<< iterSpecies->id << '\t' 
+		if(&(*iterSpecies) == bestSpecies) outstream << '*';
+		outstream 	<< iterSpecies->id << '\t'
 					<< iterSpecies->creation << '\t'
 					<< iterSpecies->genomes.size() << '\t'
 					<< (g_generationNumber - iterSpecies->lastImprovementGeneration) << '\t'
@@ -854,7 +855,7 @@ void Population::PrintSummary(ostream& outstream)
 void Population::PrintVerticalSpeciesStack(ostream& outstream)
 {
 	const uint8_t terminalWidth = 100;
-	static const string numToChar = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	static const string numToChar = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 	// Count total genomes
 	uint16_t totalGenomes = 0;
@@ -867,20 +868,19 @@ void Population::PrintVerticalSpeciesStack(ostream& outstream)
 	// Print a char for each % of genomes in each species.
 	for(list<Species>::const_iterator 
 		iterSpecies = species.begin();
-		(iterSpecies != species.end()) and (iterSpecies->id < numToChar.size());
+		iterSpecies != species.end();
 		iterSpecies++)
-	{
 		for(uint8_t 
 			count = 0;
 			count < (unsigned int)( (float)(iterSpecies->genomes.size())/(float)totalGenomes*(float)terminalWidth );
 			count++)
-			outstream << numToChar[iterSpecies->id];
-	}
+			outstream << numToChar[ iterSpecies->id % numToChar.size() ];
+
 	outstream << '\n';
 }
 
 
 void Population::PrintFitness(ostream& outstream)
 {
-	outstream << g_generationNumber << ',' << bestFitness << '\n';
+	outstream << setw(6) << g_generationNumber << ',' << fixed << setprecision(15) << bestFitness << '\n';
 }

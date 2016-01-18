@@ -80,6 +80,8 @@ int main(int argc, char *argv[])
 	string 		m_printSpeciesStackFile = "";
 	string 		m_printFitnessFile		= "";
 	float		m_weightPerturbStdev	= FLT_MAX;
+	uint32_t	m_killStagnated			= 0;
+	uint32_t	m_refocusStagnated		= 0;
 
 	// Non-CLI-configurable options
 	float	m_survival_threshold		= 0.20;
@@ -88,23 +90,25 @@ int main(int argc, char *argv[])
 	// List of command line options
 	boost::program_options::options_description cliOptDesc("Options");
 	cliOptDesc.add_options()
-		("train-data", 	boost::program_options::value<string>(), 	"location of training data CSV")
-		("test-data", 	boost::program_options::value<string>(), 	"location of test data CSV")
-		("seed", 		boost::program_options::value<int>(), 		"random number generator seed")
-		("generations", boost::program_options::value<uint32_t>(),	"number of generations to perform")
-		("population-size", 	boost::program_options::value<uint16_t>(),	"maximum population size")
-		("compat-excess",		boost::program_options::value<float>(),		"compatibility weight c1")
-		("compat-disjoint",		boost::program_options::value<float>(),		"compatibility weight c2")
-		("compat-weight",		boost::program_options::value<float>(),		"compatibility weight c3")
-		("perturb-stdev",		boost::program_options::value<float>(),		"standard deviation of gaussian perturb weights")
-	    ("best-compat", 													"enable best compatibility speciation")
-	    ("limit-growth", 													"limits initial growth to 2*size(species)")
+		("train-data", 				boost::program_options::value<string>(), 	"location of training data CSV")
+		("test-data", 				boost::program_options::value<string>(), 	"location of test data CSV")
+		("seed", 					boost::program_options::value<int>(), 		"random number generator seed")
+		("generations", 			boost::program_options::value<uint32_t>(),	"number of generations to perform")
+		("population-size", 		boost::program_options::value<uint16_t>(),	"maximum population size")
+		("compat-excess",			boost::program_options::value<float>(),		"compatibility weight c1")
+		("compat-disjoint",			boost::program_options::value<float>(),		"compatibility weight c2")
+		("compat-weight",			boost::program_options::value<float>(),		"compatibility weight c3")
+		("perturb-stdev",			boost::program_options::value<float>(),		"standard deviation of gaussian perturb weights")
+	    ("best-compat", 														"enable best compatibility speciation")
+	    ("limit-growth", 														"limits initial growth to 2*size(species)")
+	    ("kill-stagnated", 			boost::program_options::value<uint32_t>(),	"removes species that stagnate after N generations")
+	    ("refocus-stagnated", 		boost::program_options::value<uint32_t>(),	"refocuses species that stagnate after N generations")
 		("print-population", 													"print population statistics")
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 		("print-speciesstack-file", boost::program_options::value<string>(), 	"print graph of species size to a file")
 		("print-fitness-file", 		boost::program_options::value<string>(), 	"print best fitness to a file")
 	    ("debug", 					boost::program_options::value<uint16_t>(),	"enable debug mode")
-	    ("help", 													"give this help list")
+	    ("help", 																"give this help list")
 	;
 
 	// Parse options
@@ -127,7 +131,8 @@ int main(int argc, char *argv[])
 	if (varMap.count("best-compat")) 			m_bestCompat				= true;
 	if (varMap.count("perturb-stdev"))			m_weightPerturbStdev 		= varMap["perturb-stdev"].as<float>();
 	if (varMap.count("limit-growth")) 			gm_limitInitialGrowth		= true;
-
+	if (varMap.count("kill-stagnated"))			m_killStagnated				= varMap["kill-stagnated"].as<uint32_t>();
+	if (varMap.count("refocus-stagnated"))		m_refocusStagnated			= varMap["refocus-stagnated"].as<uint32_t>();
 
 	if (varMap.count("print-population"))			m_printPopulation 		= true;
 	if (varMap.count("print-population-file"))		m_printPopulationFile 	= varMap["print-population-file"].as<string>();
@@ -136,7 +141,8 @@ int main(int argc, char *argv[])
 
 	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
 
-
+	if(m_refocusStagnated>m_killStagnated)
+		{cout << "ERROR --refocus-stagnated must be inferior to --kill-stagnated."; exit(1); }
 
 
 	/***
@@ -285,7 +291,6 @@ int main(int argc, char *argv[])
 	 *** C0 Loop evolution until criteria match
 	 ***/
 
-
 	do
 	{
 		if(gm_debug) cout << "DEBUG Generation " << g_generationNumber << endl;
@@ -312,7 +317,6 @@ int main(int argc, char *argv[])
 
 		/* C1 Go through every genome: update fitness.
 		 */
-		if(gm_debug) cout << "DEBUG UPDATE FITNESS" << endl;
 		
 		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
@@ -331,7 +335,6 @@ int main(int argc, char *argv[])
 		/* C2 Eliminate the lowest performing members from the species.
 		 * Requires: up-to-date fitness on all genomes.
 		 */
-		if(gm_debug) cout << "DEBUG ELIMINATE WEAK" << endl;
 		
 		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
@@ -359,12 +362,63 @@ int main(int argc, char *argv[])
 
 
 		/* C3 Update species and population statistics, track the champions.
+		 * Kill stagnated, refocus stagnated species.
 		 * Requires: up-to-date fitness on all genomes.
 		 */
- 		if(gm_debug) cout << "DEBUG UPDATE CHAMPIONS" << endl;
 		
 		// Update each species' champion, best fitness, generation update
 		population->UpdateSpeciesAndPopulationStats();
+
+		// Kill stale species
+		if(m_killStagnated)
+		{
+			// Go through each species. If it has stagnated for more than m_killStagnated
+			// generations, and has 3 genomes or less, kill it.
+			
+			list<Species>::iterator iterSpecies = population->species.begin();
+			while(iterSpecies != population->species.end())
+			{
+				
+				if( ((g_generationNumber - iterSpecies->lastImprovementGeneration) > m_killStagnated)
+					and (iterSpecies->genomes.size()<=3) 
+					and (&(*iterSpecies) != population->bestSpecies) ) // Don't kill the best species even if it stagnated
+				{
+					cout << "KILL SPECIES " << iterSpecies->id << endl;
+					iterSpecies = population->species.erase(iterSpecies);
+				}
+				else
+					iterSpecies++;
+			}
+		}
+
+
+		// Refocus stagnated species. Kills off all but the top two genomes.
+		if(m_refocusStagnated)
+		{
+			// Go through each species. If it has stagnated for more than m_refocusStagnated
+			// generations, and has more than 2 genomes, keep only the top two genomes.
+
+			for(list<Species>::iterator 
+				iterSpecies = population->species.begin();
+				iterSpecies != population->species.end();
+				iterSpecies++)
+				if( 	( (g_generationNumber - iterSpecies->lastImprovementGeneration) > m_refocusStagnated)
+					and ( (g_generationNumber - iterSpecies->lastRefocusGeneration) > m_refocusStagnated)
+					and (iterSpecies->genomes.size()>2) 
+					and (&(*iterSpecies) != population->bestSpecies) ) 
+				{
+					// Keep the top two genomes, kill the rest.
+					iterSpecies->genomes.sort();
+					while(iterSpecies->genomes.size() > 2)
+						iterSpecies->genomes.pop_back();
+
+					// Reset their 'lastImprovementGeneration' counters or 
+					// next loop will kill all children again
+					iterSpecies->lastRefocusGeneration = g_generationNumber;
+
+					cout << "REFOCUS SPECIES " << iterSpecies->id << endl;
+				}
+		}
 
 
 
@@ -375,7 +429,6 @@ int main(int argc, char *argv[])
 		 * Logically, this step should come before C5, but C4 wrecks the champions' pointers
 		 * due to the trashing of the old species, so it's easier to store previous champions here.
 		 */
- 		if(gm_debug) cout << "DEBUG NEW POPULATION & SAVE CHAMPIONS" << endl;
 		
 		// Create the new population for step C4.
 		Population* newPopulation = new Population();
@@ -392,6 +445,7 @@ int main(int argc, char *argv[])
 			Species speciesCopy = Species(iterSpecies->id, iterSpecies->creation);
 			speciesCopy.bestFitness = iterSpecies->bestFitness;
 			speciesCopy.lastImprovementGeneration = iterSpecies->lastImprovementGeneration;
+			speciesCopy.lastRefocusGeneration = iterSpecies->lastRefocusGeneration;
 
 			speciesCopy.genomes.push_back( *(iterSpecies->champion) );
 
@@ -405,15 +459,48 @@ int main(int argc, char *argv[])
 
 
 		/* C4 Intra-species mating and reproduction. 
-		 * Requires: updated fitnesses.
+		 * Requires: updated fitness values.
+		 * Provides: explicit fitness sharing.
 		 */
- 		if(gm_debug) cout << "DEBUG REPRODUCE" << endl;
 		
+ 		// Calculate adjusted fitness values.
+ 		map<Species*, double> sumAdjFitness;
+ 		// Go through all the species and genomes
 		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
 			iterSpecies != population->species.end();
 			iterSpecies++)
-			iterSpecies->Reproduce(m_maxPop);
+		{
+			double speciesSumAdjFitness = 0.0;
+			for(list<Genome>::iterator
+				iterGenome = iterSpecies->genomes.begin();
+				iterGenome != iterSpecies->genomes.end();
+				iterGenome++)
+			{
+				iterGenome->adjFitness = iterGenome->fitness / iterSpecies->genomes.size();
+				speciesSumAdjFitness += iterGenome->adjFitness;
+			}
+
+			// Store the sum(adjFitness) for this species
+			sumAdjFitness[&(*iterSpecies)] = speciesSumAdjFitness;
+		}
+
+		// Sum of species' sums
+		double totalAdjFitness=0.0;
+		for(map<Species*, double>::const_iterator 
+			iterSumAdjFitness = sumAdjFitness.begin();
+			iterSumAdjFitness != sumAdjFitness.end();
+			iterSumAdjFitness++)
+			totalAdjFitness += iterSumAdjFitness->second;
+
+		// Each species now gets sumAdjFitness/totalAdjFitness*m_maxPop allowed children.
+
+ 		// Reproduce each species.
+		for(map<Species*, double>::const_iterator 
+			iterSpecies = sumAdjFitness.begin();
+			iterSpecies != sumAdjFitness.end();
+			iterSpecies++)
+			iterSpecies->first->Reproduce( sumAdjFitness[iterSpecies->first]/totalAdjFitness*m_maxPop );
 
 
 
@@ -422,11 +509,7 @@ int main(int argc, char *argv[])
 		/* C5 Go through every genome and place it in a species according to its compatibility.
 		 * Requires: Knowing champions of each species, pre-mating.
 		 */
- 		if(gm_debug) cout << "DEBUG COMPATIBILITY" << endl;
 
-
-
-		// Now go through the old population and copy genomes over according to the best compatibility match. 
 
 		// Go through each species
 		for(list<Species>::iterator 
@@ -573,15 +656,10 @@ int main(int argc, char *argv[])
 
 
 
-
-
-		// TODO Convert fitness to adjustedFitness
-		// TODO use a ratio of sum(adjustedFitness)
-
-
+	if(cin.eof()) break;
 
 	// Generation loop control
-	g_generationNumber++;
+	g_generationNumber++; 
 	} while( g_generationNumber < m_genmax );	// Specify stopping criteria here
 
 

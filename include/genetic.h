@@ -183,6 +183,7 @@ public:
 	
 	double bestFitness = 0;	// Best possible fitness is=1
 	uint32_t lastImprovementGeneration;
+	uint32_t lastRefocusGeneration;
 
 	// For tracking the species champion.
 	Genome* champion;
@@ -193,7 +194,9 @@ public:
 
 	// Constructor, require speciesID
 	Species(uint16_t iid, uint32_t generation)
-		{ id = iid; creation = generation; lastImprovementGeneration = generation;}
+		{ id = iid; creation = generation; 
+			lastImprovementGeneration = generation;
+			lastRefocusGeneration = generation;}
 
 	// Perform mating on this species, up to the maximum of 'count'.
 	void Reproduce(uint16_t targetSpeciesSize);

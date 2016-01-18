@@ -7,12 +7,13 @@ TODO
 - Save genome to file
 - Load genome from file + evaluate DBs on it
 
-- Fitness sharing
-- If the maximumFitness of a species does not improve for 15 generations, mate only the top two genes.
--- Would need to disable slowStart
+v Fitness sharing
+v If the maximumFitness of a species does not improve for 15 generations, mate only the top two genes.
+v- Would need to disable slowStart
 
-- Clear out empty species (how do species extinguish themselves?)
-- May need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
+v Clear out empty species
+x May need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
+  They seem to be taking hold just fine.
 - Self-adjusting m_compat_threshold
 
 - Print the best genome across all species each generation, identify its species (to see jumps to a different species)
