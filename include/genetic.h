@@ -106,8 +106,8 @@ public:
 	map<uint16_t, ConnectionGene> connections;
 
 	// The current fitness and adjusted fitness of this genome
-	double fitness = 0;
-	double adjFitness = 0;
+	double fitness = DBL_MAX;
+	double adjFitness = DBL_MAX;
 
 	// A unique random identifier for this genome.
 	uint64_t id = 0; 
@@ -185,7 +185,7 @@ public:
 	uint32_t creation = UINT32_MAX;
 	
 	double bestFitness = DBL_MAX;	// Best possible fitness is=0
-	uint32_t lastImprovementGeneration=0;
+	uint32_t lastImprovementGeneration;
 
 	// For tracking the species champion.
 	Genome* champion;
@@ -196,7 +196,7 @@ public:
 
 	// Constructor, require speciesID
 	Species(uint16_t iid, uint32_t generation)
-		{ id = iid; creation = generation; }
+		{ id = iid; creation = generation; lastImprovementGeneration = generation;}
 
 	// Perform mating on this species, up to the maximum of 'count'.
 	void Reproduce(uint16_t targetSpeciesSize);

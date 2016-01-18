@@ -2,7 +2,7 @@
 #include "genetic.h"
 
 // Debug flag
-bool gm_debug = false;
+uint16_t gm_debug = 0;
 
 // Global generation counter
 uint32_t g_generationNumber = 0;
@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
 	string 		m_printSpeciesStackFile = "";
 	string 		m_printFitnessFile		= "";
 
+	bool 		m_bestCompat			= false;
 	// Non-CLI-configurable options
 
 	float	m_survival_threshold		= 0.20;
@@ -94,11 +95,12 @@ int main(int argc, char *argv[])
 		("compat-excess",		boost::program_options::value<float>(),		"compatibility weight c1")
 		("compat-disjoint",		boost::program_options::value<float>(),		"compatibility weight c2")
 		("compat-weight",		boost::program_options::value<float>(),		"compatibility weight c3")
+	    ("best-compat", 													"enable best compatibility speciation")
 		("print-population", 													"print population statistics")
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 		("print-speciesstack-file", boost::program_options::value<string>(), 	"print graph of species size to a file")
 		("print-fitness-file", 		boost::program_options::value<string>(), 	"print best fitness to a file")
-	    ("debug", 													"enable debug mode")
+	    ("debug", 					boost::program_options::value<uint16_t>(),	"enable debug mode")
 	    ("help", 													"give this help list")
 	;
 
@@ -110,7 +112,7 @@ int main(int argc, char *argv[])
 	if(argc==1) { cout << cliOptDesc; return 1; }
 
 	// Process options
-	if (varMap.count("debug")) 					gm_debug		= true;
+	if (varMap.count("debug")) 					gm_debug		= varMap["debug"].as<uint16_t>();
 	if (varMap.count("train-data"))				m_traindata		= varMap["train-data"].as<string>();
 	if (varMap.count("test-data"))				m_testdata		= varMap["test-data"].as<string>();
 	if (varMap.count("seed"))					m_seed			= varMap["seed"].as<int>();
@@ -119,6 +121,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("compat-excess"))			gm_compat_excess 	= varMap["compat-excess"].as<float>();
 	if (varMap.count("compat-disjoint"))		gm_compat_disjoint 	= varMap["compat-disjoint"].as<float>();
 	if (varMap.count("compat-weight"))			gm_compat_weight 	= varMap["compat-weight"].as<float>();
+	if (varMap.count("best-compat")) 			m_bestCompat		= true;
 
 	if (varMap.count("print-population"))			m_printPopulation 		= true;
 	if (varMap.count("print-population-file"))		m_printPopulationFile 	= varMap["print-population-file"].as<string>();
@@ -366,7 +369,7 @@ int main(int argc, char *argv[])
 		
 		// Create the new population for step C4.
 		Population* newPopulation = new Population();
-		
+
 		// Store the previous species and their champions
 		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
@@ -374,7 +377,12 @@ int main(int argc, char *argv[])
 			iterSpecies++)
 		{
 			// Clone each species with only the champion genome on them.
+			assert(iterSpecies->bestFitness <= iterSpecies->champion->fitness);
+
 			Species speciesCopy = Species(iterSpecies->id, iterSpecies->creation);
+			speciesCopy.bestFitness = iterSpecies->bestFitness;
+			speciesCopy.lastImprovementGeneration = iterSpecies->lastImprovementGeneration;
+
 			speciesCopy.genomes.push_back( *(iterSpecies->champion) );
 
 			// Push them to the new population
@@ -409,7 +417,6 @@ int main(int argc, char *argv[])
 
 
 		// Now go through the old population and copy genomes over according to the best compatibility match. 
-		// TODO if(genome.id == champion.id) no copy;
 
 		// Go through each species
 		for(list<Species>::iterator 
@@ -422,57 +429,118 @@ int main(int argc, char *argv[])
 				iterGenome != iterSpecies->genomes.end();
 				iterGenome++)
 			{
-				// Compute compatibility of this genome to each species
-				// This stores <speciesPointer,compatibility> pairs
-				map<Species*,double> compatibilityMatch;
-
-				// Track compatibilities. This looks for matches in the *new* population,
-				// which was populated with empty species + champions on step C5pre.
-				for(list<Species>::iterator 
-					iterSpeciesCompat = newPopulation->species.begin();
-					iterSpeciesCompat != newPopulation->species.end();
-					iterSpeciesCompat++)
-					compatibilityMatch[ &(*iterSpeciesCompat) ] = Compatibility(&(*iterGenome), iterSpeciesCompat->champion);
-
-				// Locate min distance (compatibility)
-				double minDistance = DBL_MAX; 
-				Species* mostCompatSpecies = 0;
-				for(map<Species*,double>::const_iterator 
-					iterCompat = compatibilityMatch.begin();
-					iterCompat != compatibilityMatch.end();
-					iterCompat++ )
-					if(iterCompat->second < minDistance)
-						{ minDistance = iterCompat->second; mostCompatSpecies = iterCompat->first; }
-
-				if(gm_debug) 
-					cout 	<< "DEBUG Determined best compatibility " << setprecision(2) << fixed << minDistance 
-							<< " with species " << mostCompatSpecies->id
-							<< " for genome " << hex << iterGenome->id << dec
-							<< endl;
-
-				// Now place the genome in the new population. 
-				// If compatibility==0, we compared with ourselves, do nothing.
-				// If compatibility < m_compat_threshold, we fit in species 'mostCompatSpecies', put it there.
-				// If compatibility > m_compat_threshold, create a new species, put it there, mark it as the champion.
-				if(minDistance!=0)
+				/* We have two algorithms:
+				 * firstCompat: place genomes in the first species where they match the champion
+				 * bestCompat: place genomes in the species with the best compatibility
+				 */
+				if(m_bestCompat)
 				{
-					if(minDistance < m_compat_threshold)
+					// Compute compatibility of this genome to each species
+					// This stores <speciesPointer,compatibility> pairs
+					map<Species*,double> compatibilityMatch;
+
+					// Track compatibilities. This looks for matches in the *new* population,
+					// which was populated with empty species + champions on step C5pre.
+					for(list<Species>::iterator 
+						iterSpeciesCompat = newPopulation->species.begin();
+						iterSpeciesCompat != newPopulation->species.end();
+						iterSpeciesCompat++)
+						compatibilityMatch[ &(*iterSpeciesCompat) ] = Compatibility(&(*iterGenome), iterSpeciesCompat->champion);
+
+					// Locate min distance (compatibility)
+					double minDistance = DBL_MAX; 
+					Species* mostCompatSpecies = 0;
+					for(map<Species*,double>::const_iterator 
+						iterCompat = compatibilityMatch.begin();
+						iterCompat != compatibilityMatch.end();
+						iterCompat++ )
+						if(iterCompat->second < minDistance)
+							{ minDistance = iterCompat->second; mostCompatSpecies = iterCompat->first; }
+
+					if(gm_debug >= 2) 
+						cout 	<< "DEBUG Determined best compatibility " << setprecision(2) << fixed << minDistance 
+								<< " with species " << mostCompatSpecies->id
+								<< " for genome " << hex << iterGenome->id << dec
+								<< endl;
+
+					// Now place the genome in the new population. 
+					// If compatibility==0, we compared with ourselves, do nothing.
+					// If compatibility < m_compat_threshold, we fit in species 'mostCompatSpecies', put it there.
+					// If compatibility > m_compat_threshold, create a new species, put it there, mark it as the champion.
+					if(minDistance!=0)
 					{
-						// Place the genome in 'mostCompatSpecies'
-						mostCompatSpecies->genomes.push_back( *iterGenome );
+						if(minDistance < m_compat_threshold)
+						{
+							// Place the genome in 'mostCompatSpecies'
+							mostCompatSpecies->genomes.push_back( *iterGenome );
+						}
+						else
+						{
+							// Create a new species for the genome.
+							Species newSpecies(++g_newSpeciesId, g_generationNumber);
+
+							// Push the genome as the champion
+							newSpecies.genomes.push_back( *iterGenome );
+							newPopulation->species.push_back( newSpecies );
+							newPopulation->species.back().champion = &( newPopulation->species.back().genomes.back() );
+						}					
+					}
+				} // END BEST COMPAT ALGO
+				else
+				{
+					// Find the first compatible match instead.
+					bool f_found = false;
+					double distance = 0;
+					list<Species>::iterator iterSpeciesCompat;
+					for(iterSpeciesCompat = newPopulation->species.begin();
+						(iterSpeciesCompat != newPopulation->species.end() ) and !f_found;
+						iterSpeciesCompat++)
+					{
+						distance = Compatibility(&(*iterGenome), iterSpeciesCompat->champion);
+						if( distance < m_compat_threshold )
+							f_found = true;
+					}
+
+					// If we found a species that is compatible, place the genome there.
+					// Else: create a new species for the genome.
+					if(f_found)
+					{
+						advance(iterSpeciesCompat,-1); // Note that the above for() incremented one extra time after flipping f_found;
+						iterSpeciesCompat->genomes.push_back( *iterGenome );
+
+						if(gm_debug >= 2) 
+							cout 	<< "DEBUG Match distance " << setprecision(2) << fixed << distance 
+									<< " with species " << iterSpeciesCompat->id
+									<< " for genome " << hex << iterGenome->id << dec
+									<< endl;
 					}
 					else
 					{
 						// Create a new species for the genome.
-					}					
-				}
+						Species newSpecies(++g_newSpeciesId, g_generationNumber);
+
+						// Push the genome as the champion
+						newSpecies.genomes.push_back( *iterGenome );
+						newPopulation->species.push_back( newSpecies );
+						newPopulation->species.back().champion = &( newPopulation->species.back().genomes.back() );
+						newPopulation->species.back().bestFitness = newPopulation->species.back().champion->fitness;
+
+						if(gm_debug) 
+							cout 	<< "DEBUG Created new species for genome " << hex << iterGenome->id << dec
+									<< " distance " << setprecision(2) << fixed << distance 
+									<< " speciesID " << g_newSpeciesId << endl;
+					}
+
+				} // END FIRST COMPAT ALGO
 			} // END GO THROUGH EACH GENOME
 
 		// We now have a new, sorted population.
 		// Replace population with new population.
 		delete population;
 		population = newPopulation;
-
+		
+		// Update statistics on the new population
+		population->UpdateSpeciesAndPopulationStats();
 
 
 
@@ -504,15 +572,7 @@ int main(int argc, char *argv[])
 		 */
 
 		// TODO need an updateSpecies routine that updates the best fitness of all species and keeps track of last time fitness improved.
-
-		// Create a new Population with all of the species, but with a single champion genome on each species.
-		// Run through all Genomes on all species, matching their compatibility to the champion of each species.
-		// Champions are always the first genome in the list<species>, species.begin()
-		// Create a new species if compatibility>m_compat_threshold for all existing species
-		// If compatibility == 0, do nothing, it's a clone or the champion itself.
 		// Clear out empty species (how do species extinguish themselves?)
-		// Replace main Population* pointer. Delete old Population.
-
 		// TODO may need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
 
 

@@ -91,7 +91,7 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 	// Now add all necessary nodes
 	offspring.nodes = mostFitGenome->nodes;
 
-	if(gm_debug) 
+	if(gm_debug >= 2) 
 		cout 	<< "DEBUG Mating " << hex 
 				<< setw(16) << firstParent->id << " with " 
 				<< setw(16) << secondParent->id << " birthing " 
@@ -664,7 +664,7 @@ void Genome::PrintToGV(string filename)
 void Species::Reproduce(uint16_t targetSpeciesSize)
 {
 	// Restrain the species to doubling in size, at most, on each iteration
-	uint16_t targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size());
+	uint16_t targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size()+1);
 
 	// Vector to hold the new genomes
 	list<Genome> offsprings;
@@ -812,6 +812,7 @@ void Species::Print(ostream& outstream)
 
 void Population::UpdateSpeciesAndPopulationStats(void)
 {
+
 	for(list<Species>::iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
@@ -820,8 +821,10 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 		// Find and track the champion.
 		iterSpecies->champion = iterSpecies->FindChampion();
 
-		// The champion is always kept intact, so the following must be true:
-		assert(iterSpecies->champion->fitness <= iterSpecies->bestFitness);
+		// The champion is always kept intact, so the following must be true.
+		// With best-species placement however, genomes can jump a lot more and be pulled out
+		// of the species in which they are the champions.
+		// assert(iterSpecies->champion->fitness <= iterSpecies->bestFitness);
 
 		// If the champion's fitness improved since the last generation, we record that.
 		if(iterSpecies->champion->fitness < iterSpecies->bestFitness)
@@ -877,7 +880,7 @@ void Population::PrintSummary(ostream& outstream)
 void Population::PrintVerticalSpeciesStack(ostream& outstream)
 {
 	const uint8_t terminalWidth = 100;
-	static const string numToChar = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	static const string numToChar = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 	// Count total genomes
 	uint16_t totalGenomes = 0;
@@ -890,7 +893,7 @@ void Population::PrintVerticalSpeciesStack(ostream& outstream)
 	// Print a char for each % of genomes in each species.
 	for(list<Species>::const_iterator 
 		iterSpecies = species.begin();
-		iterSpecies != species.end();
+		(iterSpecies != species.end()) and (iterSpecies->id < numToChar.size());
 		iterSpecies++)
 	{
 		for(uint8_t 

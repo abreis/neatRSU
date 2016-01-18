@@ -21,7 +21,7 @@ using namespace std;
 
 /* Definitions
    ----------- */
-extern bool gm_debug;
+extern uint16_t gm_debug;
 extern uint32_t g_generationNumber;
 extern const uint16_t g_inputs;
 extern map<uint16_t,string> g_nodeNames;
