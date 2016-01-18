@@ -4,20 +4,23 @@ TODO
 
 ## Newest
 
-- Save genome to file
-- Load genome from file + evaluate DBs on it
+v Save genome to file
+- Load genome from file 
+  + evaluate DBs on it
+  + use as starting point
 
 v Fitness sharing
 v If the maximumFitness of a species does not improve for 15 generations, mate only the top two genes.
-v- Would need to disable slowStart
+  Would need to disable slowStart
 
 v Clear out empty species
 x May need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
   They seem to be taking hold just fine.
 v Self-adjusting m_compat_threshold
 
-- Print the best genome across all species each generation, identify its species (to see jumps to a different species)
+v Print the best genome across all species each generation, identify its species (to see jumps to a different species)
 - Wipe the genome's memory on new nodeID incoming
+- Print the champion on every 'N' generations
 
 
 

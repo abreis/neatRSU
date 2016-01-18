@@ -685,7 +685,7 @@ int main(int argc, char *argv[])
 
 	population->superChampion->Print(cout);
 	population->superChampion->PrintToGV("superChampion.gv");
-
+	population->superChampion->SaveToFile("superChampion.csv");
 
 	delete population;
 

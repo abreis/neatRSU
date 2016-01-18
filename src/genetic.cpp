@@ -627,6 +627,49 @@ void Genome::PrintToGV(string filename)
 }
 
 
+void Genome::SaveToFile(string filename)
+{
+	ofstream csvout(filename.c_str());
+	if (!csvout.is_open()) { cout << "\nERROR\tFailed to open file for writing." << endl; exit(1); }
+
+	// Store ID
+	csvout << "id," << hex << id << dec << '\n';
+
+	// Store nodes
+	for(map<uint16_t, NodeGene>::const_iterator 
+		iterNode = nodes.begin();
+		iterNode != nodes.end();
+		iterNode++)
+	{
+		csvout << "node," << iterNode->second.id << ',';
+		switch(iterNode->second.type)
+		{
+			case NodeType::SENSOR: 	csvout << "Sen "; break;
+			case NodeType::OUTPUT: 	csvout << "Out "; break;
+			case NodeType::HIDDEN: 	csvout << "Hid "; break;
+			case NodeType::BIAS: 	csvout << "Bia "; break;
+			default:				csvout << "ERR "; break;
+		}
+		csvout << '\n';
+	}
+
+	// Store connections
+	for(map<uint16_t, ConnectionGene>::const_iterator 
+		iterConn = connections.begin();
+		iterConn != connections.end();
+		iterConn++)
+	{
+		csvout << "link," 
+				<< iterConn->second.from_node << ','
+				<< iterConn->second.to_node << ','
+				<< fixed << setprecision(20) << iterConn->second.weight << ','
+				<< iterConn->second.enabled << ','
+				<< iterConn->second.innovation << '\n';
+	}
+}
+
+
+
 /* SPECIES */
 
 
@@ -681,7 +724,7 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 		uint16_t genomeIndex = 1;
 
 		// Everyone mates and mutates in order, most fit genomes go first
-		// TODO bias towards more fit genomes having more offspring
+		// We bias towards more fit genomes having more offspring
 		while( offsprings.size() < targetSpeciesSizeAdj )
 		{
 			// We want the top genome to have 3x more chance to mate.
@@ -692,7 +735,7 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 
 			// This gives more chances to mate to the first genomes.
 			uint16_t repeatProcreation = mm*(float)genomeIndex+bb; 
-			
+
 			while( (repeatProcreation>0) and (offsprings.size() < targetSpeciesSizeAdj) )
 			{
 				// Clone the main parent
@@ -845,8 +888,8 @@ void Population::PrintSummary(ostream& outstream)
 {
 	// Header
 	outstream	<< "\nGENERATION " << g_generationNumber << '\n'
-			 	<< "====================================================\n"
-				<< "Species Created Genomes Stagnated       Best Fitness\n";
+			 	<< "================================================================\n"
+				<< "Species Created Genomes Stagnated       Best Fitness    CComplex\n";
 
 	// Go through species.
 	// Print Species ID. Generation formed. Number of genomes. Best fitness. Generations since bestFitness improved.
@@ -860,13 +903,14 @@ void Population::PrintSummary(ostream& outstream)
 					<< iterSpecies->creation << '\t'
 					<< iterSpecies->genomes.size() << '\t'
 					<< (g_generationNumber - iterSpecies->lastImprovementGeneration) << '\t'
-					<< '\t' << iterSpecies->bestFitness << '\n';
+					<< '\t' << iterSpecies->bestFitness << '\t'
+					<< iterSpecies->champion->nodes.size() << ',' << iterSpecies->champion->connections.size() 
+					<< '\n';
 	}
 
 	// Footer
-	outstream 	<< "----------------------------------------------------" << '\n';
-
-	// TODO: print best genome ID, species it belongs to, its fitness
+	outstream 	<< "----------------------------------------------------------------" << '\n';
+	outstream 	<< "Best Genome: " << hex << superChampion->id << dec << '\n'; 
 }
 
 

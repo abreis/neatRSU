@@ -166,6 +166,9 @@ public:
 	// Print the contents of this Genome as Graphviz language to a file
 	void PrintToGV(string filename);
 
+	// Save the contents of the genome to a file, in CSV format.
+	void SaveToFile(string filename);
+
 	// Sorting performed by fitness (highest value to lowest -> highest fitness to lowest)
 	bool operator < (const Genome& gen) const
 		{ return (fitness > gen.fitness); }
