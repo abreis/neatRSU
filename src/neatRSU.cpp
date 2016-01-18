@@ -226,10 +226,6 @@ int main(int argc, char *argv[])
 	// The seed can be specified thorugh CLI
 	g_rng.seed(m_seed);
 
-	// Source of Gaussian randomness (for weight mutations)
-	// Inits: (mean,stdev)
-	g_rnd_gauss.param( boost::random::normal_distribution<>::param_type( 0.0, 1.0 ) );
-
 	// To draw random integers (e.g. to randomly select a node), use:
 	// boost::random::uniform_int_distribution<> dist(min, max);
 
@@ -290,7 +286,14 @@ int main(int argc, char *argv[])
 		/* Initial setup for Generation loop.
 		 */ 
 
-
+		// Dynamic source of Gaussian randomness, for weight mutations.
+		// Inits: (mean,stdev)
+		// stdev 
+		static float adaptiveStDev;
+		// adaptiveStDev = 100/log(g_generationNumber+10)-10;
+		// adaptiveStDev = (sin((float)g_generationNumber/20.0)+1.0)*49.0+1.0;
+		adaptiveStDev = 10.0;
+		g_rnd_gauss.param( boost::random::normal_distribution<>::param_type( 0.0, adaptiveStDev ) );
 
 
 
