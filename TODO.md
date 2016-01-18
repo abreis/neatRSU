@@ -14,7 +14,7 @@ v- Would need to disable slowStart
 v Clear out empty species
 x May need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
   They seem to be taking hold just fine.
-- Self-adjusting m_compat_threshold
+v Self-adjusting m_compat_threshold
 
 - Print the best genome across all species each generation, identify its species (to see jumps to a different species)
 - Wipe the genome's memory on new nodeID incoming

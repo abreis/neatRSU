@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
 	float		m_weightPerturbStdev	= FLT_MAX;
 	uint32_t	m_killStagnated			= 0;
 	uint32_t	m_refocusStagnated		= 0;
+	uint16_t	m_targetSpecies			= 0;
 
 	// Non-CLI-configurable options
 	float	m_survival_threshold		= 0.20;
@@ -103,6 +104,7 @@ int main(int argc, char *argv[])
 	    ("limit-growth", 														"limits initial growth to 2*size(species)")
 	    ("kill-stagnated", 			boost::program_options::value<uint32_t>(),	"removes species that stagnate after N generations")
 	    ("refocus-stagnated", 		boost::program_options::value<uint32_t>(),	"refocuses species that stagnate after N generations")
+	    ("target-species",	 		boost::program_options::value<uint16_t>(),	"targets N species with a self-adjusting threshold")
 		("print-population", 													"print population statistics")
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 		("print-speciesstack-file", boost::program_options::value<string>(), 	"print graph of species size to a file")
@@ -133,6 +135,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("limit-growth")) 			gm_limitInitialGrowth		= true;
 	if (varMap.count("kill-stagnated"))			m_killStagnated				= varMap["kill-stagnated"].as<uint32_t>();
 	if (varMap.count("refocus-stagnated"))		m_refocusStagnated			= varMap["refocus-stagnated"].as<uint32_t>();
+	if (varMap.count("target-species"))			m_targetSpecies				= varMap["target-species"].as<uint16_t>();
 
 	if (varMap.count("print-population"))			m_printPopulation 		= true;
 	if (varMap.count("print-population-file"))		m_printPopulationFile 	= varMap["print-population-file"].as<string>();
@@ -290,7 +293,7 @@ int main(int argc, char *argv[])
 	/***
 	 *** C0 Loop evolution until criteria match
 	 ***/
-
+	bool f_reachedTargetSpecies = false;
 	do
 	{
 		if(gm_debug) cout << "DEBUG Generation " << g_generationNumber << endl;
@@ -312,6 +315,21 @@ int main(int argc, char *argv[])
 		g_rnd_gauss.param( boost::random::normal_distribution<>::param_type( 0.0, adaptiveStDev ) );
 
 
+		// Self-adjusting compatibility threshold
+		float deltaThreshold = 0.01;
+		if(m_targetSpecies)
+		{
+			if(!f_reachedTargetSpecies and (population->species.size() > m_targetSpecies ) )
+				f_reachedTargetSpecies=true;
+			if(f_reachedTargetSpecies)
+			{
+				if(population->species.size() > m_targetSpecies*1.20)
+					m_compat_threshold += deltaThreshold;
+				else if(population->species.size() < m_targetSpecies*0.80)
+					m_compat_threshold -= deltaThreshold;
+				if(m_compat_threshold < deltaThreshold) m_compat_threshold = deltaThreshold;
+			}
+		}
 
 
 
@@ -382,10 +400,7 @@ int main(int argc, char *argv[])
 				if( ((g_generationNumber - iterSpecies->lastImprovementGeneration) > m_killStagnated)
 					and (iterSpecies->genomes.size()<=3) 
 					and (&(*iterSpecies) != population->bestSpecies) ) // Don't kill the best species even if it stagnated
-				{
-					cout << "KILL SPECIES " << iterSpecies->id << endl;
 					iterSpecies = population->species.erase(iterSpecies);
-				}
 				else
 					iterSpecies++;
 			}
@@ -415,8 +430,6 @@ int main(int argc, char *argv[])
 					// Reset their 'lastImprovementGeneration' counters or 
 					// next loop will kill all children again
 					iterSpecies->lastRefocusGeneration = g_generationNumber;
-
-					cout << "REFOCUS SPECIES " << iterSpecies->id << endl;
 				}
 		}
 
