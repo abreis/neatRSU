@@ -560,7 +560,15 @@ void Genome::Print(ostream& outstream)
 		iterNode = nodes.begin();
 		iterNode != nodes.end();
 		iterNode++)
-		outstream << ( (iterNode->second.type==NodeType::SENSOR)?"Sen ":( (iterNode->second.type==NodeType::HIDDEN)?"Hid ":"Out " ) ); outstream << '\n'; // TODO Bia
+		switch(iterNode->second.type)
+		{
+			case NodeType::SENSOR: 	outstream << "Sen "; break;
+			case NodeType::OUTPUT: 	outstream << "Out "; break;
+			case NodeType::HIDDEN: 	outstream << "Hid "; break;
+			case NodeType::BIAS: 	outstream << "Bia "; break;
+			default:				outstream << "ERR "; break;
+		}
+		outstream << '\n';
 	for(uint16_t i = nodes.size(); i>0; i--)
 		outstream << "----"; outstream << '\n';
 
