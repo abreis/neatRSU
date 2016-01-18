@@ -267,10 +267,8 @@ int main(int argc, char *argv[])
 
 	// Push the first genome
 	firstSpecies.genomes.push_back( Genome(g_inputs) );
-	firstSpecies.champion = &( firstSpecies.genomes.front() ); 
-
-	population->species.push_back(firstSpecies);
-
+	population->species.push_back( firstSpecies );
+	population->species.back().champion = &( population->species.back().genomes.back() );
 
 
 
@@ -292,18 +290,22 @@ int main(int argc, char *argv[])
 		static float adaptiveStDev;
 		// adaptiveStDev = 100/log(g_generationNumber+10)-10;
 		// adaptiveStDev = (sin((float)g_generationNumber/20.0)+1.0)*49.0+1.0;
-		adaptiveStDev = 10.0;
+		adaptiveStDev = 1.0;
 		g_rnd_gauss.param( boost::random::normal_distribution<>::param_type( 0.0, adaptiveStDev ) );
+
+
 
 
 
 		/* C1 Go through every genome: update fitness.
 		 */
-		for(vector<Species>::iterator 
+		if(gm_debug) cout << "DEBUG UPDATE FITNESS" << endl;
+		
+		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
 			iterSpecies != population->species.end();
 			iterSpecies++)
-			for(vector<Genome>::iterator
+			for(list<Genome>::iterator
 				iterGenome = iterSpecies->genomes.begin();
 				iterGenome != iterSpecies->genomes.end();
 				iterGenome++)
@@ -313,16 +315,19 @@ int main(int argc, char *argv[])
 
 
 
-		/* C5 Eliminate the lowest performing members from the species.
+		/* C2 Eliminate the lowest performing members from the species.
 		 * Requires: up-to-date fitness on all genomes.
 		 */
-		for(vector<Species>::iterator 
+		if(gm_debug) cout << "DEBUG ELIMINATE WEAK" << endl;
+		
+		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
 			iterSpecies != population->species.end();
 			iterSpecies++)
 		{
 			// Sort the vector of Genomes by fitness.
-			sort(iterSpecies->genomes.begin(), iterSpecies->genomes.end());
+			// sort(iterSpecies->genomes.begin(), iterSpecies->genomes.end());
+			iterSpecies->genomes.sort();
 
 			// Sorting puts the lowest value (and therefore the highest fitness) last.
 			// Determine how many Genomes we're pop-ing out, based on survival metric.
@@ -340,19 +345,53 @@ int main(int argc, char *argv[])
 
 
 
-		/* C6 Update species and population statistics, track the champions.
+		/* C3 Update species and population statistics, track the champions.
 		 * Requires: up-to-date fitness on all genomes.
 		 */
+ 		if(gm_debug) cout << "DEBUG UPDATE CHAMPIONS" << endl;
+		
 		// Update each species' champion, best fitness, generation update
 		population->UpdateSpeciesAndPopulationStats();
 
 
 
 
-		/* C5b Intra-species mating and reproduction. 
+
+		/* C5pre Store the previous species and their champions.
+		 * Requires: up-to-date champions on all species.
+		 * Logically, this step should come before C5, but C4 wrecks the champions' pointers
+		 * due to the trashing of the old species, so it's easier to store previous champions here.
+		 */
+ 		if(gm_debug) cout << "DEBUG NEW POPULATION & SAVE CHAMPIONS" << endl;
+		
+		// Create the new population for step C4.
+		Population* newPopulation = new Population();
+		
+		// Store the previous species and their champions
+		for(list<Species>::iterator 
+			iterSpecies = population->species.begin();
+			iterSpecies != population->species.end();
+			iterSpecies++)
+		{
+			// Clone each species with only the champion genome on them.
+			Species speciesCopy = Species(iterSpecies->id, iterSpecies->creation);
+			speciesCopy.genomes.push_back( *(iterSpecies->champion) );
+
+			// Push them to the new population
+			newPopulation->species.push_back( speciesCopy );
+			newPopulation->species.back().champion = &( newPopulation->species.back().genomes.back() );
+		}
+
+
+
+
+
+		/* C4 Intra-species mating and reproduction. 
 		 * Requires: updated fitnesses.
 		 */
-		for(vector<Species>::iterator 
+ 		if(gm_debug) cout << "DEBUG REPRODUCE" << endl;
+		
+		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
 			iterSpecies != population->species.end();
 			iterSpecies++)
@@ -362,59 +401,77 @@ int main(int argc, char *argv[])
 
 
 
+		/* C5 Go through every genome and place it in a species according to its compatibility.
+		 * Requires: Knowing champions of each species, pre-mating.
+		 */
+ 		if(gm_debug) cout << "DEBUG COMPATIBILITY" << endl;
 
 
 
+		// Now go through the old population and copy genomes over according to the best compatibility match. 
+		// TODO if(genome.id == champion.id) no copy;
 
-		// /* C4 Go through every genome and place it in a species according to its compatibility.
-		//  * Requires: Knowing champions of each species, pre-mating.
-		//  */
+		// Go through each species
+		for(list<Species>::iterator 
+			iterSpecies = population->species.begin();
+			iterSpecies != population->species.end();
+			iterSpecies++)
+			// Go through each genome
+			for(list<Genome>::iterator
+				iterGenome = iterSpecies->genomes.begin();
+				iterGenome != iterSpecies->genomes.end();
+				iterGenome++)
+			{
+				// Compute compatibility of this genome to each species
+				// This stores <speciesPointer,compatibility> pairs
+				map<Species*,double> compatibilityMatch;
 
-		// // We create the new population here
-		// Population* newPopulation = new Population();
-		
-		// // Store the previous species and their champions
-		// for(vector<Species>::iterator 
-		// 	iterSpecies = population->species.begin();
-		// 	iterSpecies != population->species.end();
-		// 	iterSpecies++)
-		// {
-		// 	// Clone each species with only the champion genome on them.
-		// 	Species speciesCopy = Species(iterSpecies->id, iterSpecies->creation);
-		// 	speciesCopy.genomes.push_back( *(iterSpecies->champion) );
-		// 	speciesCopy.champion = &( speciesCopy.genomes.front() );
+				// Track compatibilities. This looks for matches in the *new* population,
+				// which was populated with empty species + champions on step C5pre.
+				for(list<Species>::iterator 
+					iterSpeciesCompat = newPopulation->species.begin();
+					iterSpeciesCompat != newPopulation->species.end();
+					iterSpeciesCompat++)
+					compatibilityMatch[ &(*iterSpeciesCompat) ] = Compatibility(&(*iterGenome), iterSpeciesCompat->champion);
 
-		// 	// Push them to the new population
-		// 	newPopulation->species.push_back( speciesCopy );
-		// }
+				// Locate min distance (compatibility)
+				double minDistance = DBL_MAX; 
+				Species* mostCompatSpecies = 0;
+				for(map<Species*,double>::const_iterator 
+					iterCompat = compatibilityMatch.begin();
+					iterCompat != compatibilityMatch.end();
+					iterCompat++ )
+					if(iterCompat->second < minDistance)
+						{ minDistance = iterCompat->second; mostCompatSpecies = iterCompat->first; }
 
+				if(gm_debug) 
+					cout 	<< "DEBUG Determined best compatibility " << minDistance 
+							<< " with species " << mostCompatSpecies->id
+							<< " for genome " << hex << iterGenome->id << dec
+							<< endl;
 
-		// // Now go through the old population and copy genomes over according to the best compatibility match. 
-		// // TODO if(genome.id == champion.id) no copy;
-		// // TODO
+				// Now place the genome in the new population. 
+				// If compatibility==0, we compared with ourselves, do nothing.
+				// If compatibility < m_compat_threshold, we fit in species 'mostCompatSpecies', put it there.
+				// If compatibility > m_compat_threshold, create a new species, put it there, mark it as the champion.
+				if(minDistance!=0)
+				{
+					if(minDistance < m_compat_threshold)
+					{
+						// Place the genome in 'mostCompatSpecies'
+						mostCompatSpecies->genomes.push_back( *iterGenome );
+					}
+					else
+					{
+						// Create a new species for the genome.
+					}					
+				}
+			} // END GO THROUGH EACH GENOME
 
-		// // Go through each species
-		// for(vector<Species>::iterator 
-		// 	iterSpecies = population->species.begin();
-		// 	iterSpecies != population->species.end();
-		// 	iterSpecies++)
-		// 	// Go through each genome
-		// 	for(vector<Genome>::iterator
-		// 		iterGenome = iterSpecies->genomes.begin();
-		// 		iterGenome != iterSpecies->genomes.end();
-		// 		iterGenome++)
-		// 	{
-		// 		// Compute compatibility
-		// 		// map<
-			
-
-
-		// 	}
-
-		// // We now have a new, sorted population.
-		// // Replace population with new population.
-		// delete population;
-		// population = newPopulation;
+		// We now have a new, sorted population.
+		// Replace population with new population.
+		delete population;
+		population = newPopulation;
 
 
 
@@ -450,7 +507,7 @@ int main(int argc, char *argv[])
 
 		// Create a new Population with all of the species, but with a single champion genome on each species.
 		// Run through all Genomes on all species, matching their compatibility to the champion of each species.
-		// Champions are always the first genome in the vector<species>, species.begin()
+		// Champions are always the first genome in the list<species>, species.begin()
 		// Create a new species if compatibility>m_compat_threshold for all existing species
 		// If compatibility == 0, do nothing, it's a clone or the champion itself.
 		// Clear out empty species (how do species extinguish themselves?)

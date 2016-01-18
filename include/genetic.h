@@ -10,6 +10,7 @@
 
 #include <map>
 #include <vector>
+#include <list>
 #include <string>
 
 #include "neatRSU.h"
@@ -185,7 +186,8 @@ public:
 	Genome* champion;
 
 	// Main vector of this species' genomes.
-	vector<Genome> genomes;
+	// Must be a list so pointers to champions are kept safe.
+	list<Genome> genomes;
 
 	// Constructor, require speciesID
 	Species(uint16_t iid, uint32_t generation)
@@ -210,7 +212,8 @@ public:
 	Genome* superChampion;
 
 	// Main vector of this populations' species.
-	vector<Species> species;
+	// Must be a list so pointers to species and super champion are kept safe.
+	list<Species> species;
 
 	// How many species we aim to get
 	// uint16_t targetNumber=10;

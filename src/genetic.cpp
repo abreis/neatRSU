@@ -107,30 +107,34 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 }
 
 
-double Compatibility(Genome* const gen1, Genome* const gen2)
+double Compatibility(Genome* gen1, Genome* gen2)
 {
 	double excessGenes = 0.0;
 	double disjointGenes = 0.0;
 	double totalWeightDifference = 0.0;
 	double matchingGenes = 0.0;
 
-	// Assert whether connection vectors are sorted. TODO: remove this
-	if(gm_debug)
-	{
-		map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
-			iterConn = gen1->connections.begin();
-		map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
-			iterPrev = gen1->connections.begin();
+	// Sort connection vectors
+	// sort(gen1->connections.begin(), gen1->connections.end());
+	// sort(gen2->connections.begin(), gen2->connections.end());
 
-		for(advance(iterConn, 1);
-			iterConn != gen1->connections.end();
-			iterConn++)
-			{
-				if(iterConn->second.innovation <= iterPrev->second.innovation )
-					{ cout << "ERROR Connection vector not sorted." << endl; exit(1); }
-				iterPrev++;
-			}
-	}
+	// // Assert whether connection vectors are sorted. TODO: remove this
+	// if(gm_debug)
+	// {
+	// 	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+	// 		iterConn = gen1->connections.begin();
+	// 	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+	// 		iterPrev = gen1->connections.begin();
+
+	// 	for(advance(iterConn, 1);
+	// 		iterConn != gen1->connections.end();
+	// 		iterConn++)
+	// 		{
+	// 			if(iterConn->second.innovation <= iterPrev->second.innovation )
+	// 				{ cout << "ERROR Connection vector not sorted." << endl; exit(1); }
+	// 			iterPrev++;
+	// 		}
+	// }
 
 	// Find N, the #genes in the larger genome
 	uint16_t genesInLargerGenome = max(gen1->connections.size(), gen2->connections.size());
@@ -206,8 +210,6 @@ double Compatibility(Genome* const gen1, Genome* const gen2)
 		+ ( gm_compat_disjoint*disjointGenes )/genesInLargerGenome 
 		+ gm_compat_weight*averageWeightDifference
 		);
-
-	if(gm_debug) cout << "DEBUG Determined a compatibility of " << compatibility << '\n';
 
 	return compatibility;
 }
@@ -353,12 +355,16 @@ double Genome::Activate(DataEntry data)
 	}
 
 	// On hidden nodes, this value must now go through the activation sigmoid
-	map<uint16_t, NodeGene>::iterator iterNode = nodes.begin();
-	for( advance(iterNode, d_firsthidnode-1);
-	iterNode != nodes.end();
-	iterNode++)
-		if(iterNode->second.type==NodeType::HIDDEN)
-			iterNode->second.valueNow = ActivationSigmoid(iterNode->second.valueNow);
+	// Check if there are hidden nodes
+	if(nodes.size() >= d_firsthidnode)
+	{
+		map<uint16_t, NodeGene>::iterator iterNode = nodes.begin();
+		for( advance(iterNode, d_firsthidnode-1-1);	
+		iterNode != nodes.end();
+		iterNode++)
+			if(iterNode->second.type==NodeType::HIDDEN)
+				iterNode->second.valueNow = ActivationSigmoid(iterNode->second.valueNow);
+	}
 
 	// Same for the output node
 	nodes[d_outputnode].valueNow = ActivationOutput(nodes[d_outputnode].valueNow);
@@ -675,10 +681,10 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 	uint16_t targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size());
 
 	// Vector to hold the new genomes
-	vector<Genome> offsprings;
+	list<Genome> offsprings;
 
 	// Sort our current genomes by fitness, best (lowest) on top
-	sort(genomes.begin(), genomes.end());
+	genomes.sort();
 
 	// Always keep the champion, i.e., the first genome
 	Genome champion = genomes.front();
@@ -709,7 +715,7 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 	// For >1 genome, we can perform mating
 	{
 		// Run through existing genomes
-		vector<Genome>::iterator iterGenomes;
+		list<Genome>::iterator iterGenomes;
 		iterGenomes = genomes.begin();
 
 		// Everyone mates and mutates in order, most fit genomes go first
@@ -741,7 +747,7 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 				// Perform mating, locate a second parent
 				boost::random::uniform_int_distribution<> randomParent(0, (int)(genomes.size()-1) );
 				// Genome parent2 = genomes[randomParent(g_rng)];
-				vector<Genome>::iterator iterParent2;
+				list<Genome>::iterator iterParent2;
 				iterParent2 = genomes.begin();
 				advance(iterParent2, randomParent(g_rng));
 
@@ -780,7 +786,7 @@ Genome* Species::FindChampion(void)
 	Genome* champion = &( genomes.front() );
 
 	// Go through the genomes, track the best one.
-	for(vector<Genome>::iterator
+	for(list<Genome>::iterator
 		iterGenome = genomes.begin();
 		iterGenome != genomes.end();
 		iterGenome++)
@@ -799,7 +805,7 @@ void Species::Print(ostream& outstream)
 				<< "Genome                  Fitness         Nodes   Connections\n";
 
 	// Print the list of genomes on this species.
-	for(vector<Genome>::iterator
+	for(list<Genome>::iterator
 		iterGenome = genomes.begin();
 		iterGenome != genomes.end();
 		iterGenome++)
@@ -820,7 +826,7 @@ void Species::Print(ostream& outstream)
 
 void Population::UpdateSpeciesAndPopulationStats(void)
 {
-	for(vector<Species>::iterator 
+	for(list<Species>::iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
 		iterSpecies++)
@@ -842,7 +848,7 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 	// Now find the best species
 	Species* bestSpecies = &( species.front() );
 
-	for(vector<Species>::iterator 
+	for(list<Species>::iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
 		iterSpecies++)
@@ -863,7 +869,7 @@ void Population::PrintSummary(ostream& outstream)
 
 	// Go through species.
 	// Print Species ID. Generation formed. Number of genomes. Best fitness. Generations since bestFitness improved.
-	for(vector<Species>::const_iterator 
+	for(list<Species>::const_iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
 		iterSpecies++)
@@ -889,14 +895,14 @@ void Population::PrintVerticalSpeciesStack(ostream& outstream)
 
 	// Count total genomes
 	uint16_t totalGenomes = 0;
-	for(vector<Species>::const_iterator 
+	for(list<Species>::const_iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
 		iterSpecies++)
 		totalGenomes += iterSpecies->genomes.size();
 
 	// Print a char for each % of genomes in each species.
-	for(vector<Species>::const_iterator 
+	for(list<Species>::const_iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
 		iterSpecies++)
