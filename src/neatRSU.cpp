@@ -67,20 +67,20 @@ int main(int argc, char *argv[])
 	 */
 
 	// Defaults
-	string 		m_traindata			= "";
-	string 		m_testdata 			= "";
-	int 		m_seed				= 0;
-	uint32_t 	m_genmax			= 1;
-	uint16_t 	m_maxPop			= 150;
+	string 		m_traindata				= "";
+	string 		m_testdata 				= "";
+	int 		m_seed					= 0;
+	uint32_t 	m_genmax				= 1;
+	uint16_t 	m_maxPop				= 150;
+	bool 		m_bestCompat			= false;
 
 	bool 		m_printPopulation		= false;
 	string 		m_printPopulationFile 	= "";
 	string 		m_printSpeciesStackFile = "";
 	string 		m_printFitnessFile		= "";
+	float		m_weightPerturbStdev	= FLT_MAX;
 
-	bool 		m_bestCompat			= false;
 	// Non-CLI-configurable options
-
 	float	m_survival_threshold		= 0.20;
 	float	m_compat_threshold			= 3.00;
 
@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
 		("compat-excess",		boost::program_options::value<float>(),		"compatibility weight c1")
 		("compat-disjoint",		boost::program_options::value<float>(),		"compatibility weight c2")
 		("compat-weight",		boost::program_options::value<float>(),		"compatibility weight c3")
+		("perturb-stdev",		boost::program_options::value<float>(),		"standard deviation of gaussian perturb weights")
 	    ("best-compat", 													"enable best compatibility speciation")
 		("print-population", 													"print population statistics")
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
@@ -112,16 +113,18 @@ int main(int argc, char *argv[])
 	if(argc==1) { cout << cliOptDesc; return 1; }
 
 	// Process options
-	if (varMap.count("debug")) 					gm_debug		= varMap["debug"].as<uint16_t>();
-	if (varMap.count("train-data"))				m_traindata		= varMap["train-data"].as<string>();
-	if (varMap.count("test-data"))				m_testdata		= varMap["test-data"].as<string>();
-	if (varMap.count("seed"))					m_seed			= varMap["seed"].as<int>();
-	if (varMap.count("generations"))			m_genmax		= varMap["generations"].as<uint32_t>();
-	if (varMap.count("population-size"))		m_maxPop			= varMap["population-size"].as<uint16_t>();
-	if (varMap.count("compat-excess"))			gm_compat_excess 	= varMap["compat-excess"].as<float>();
-	if (varMap.count("compat-disjoint"))		gm_compat_disjoint 	= varMap["compat-disjoint"].as<float>();
-	if (varMap.count("compat-weight"))			gm_compat_weight 	= varMap["compat-weight"].as<float>();
-	if (varMap.count("best-compat")) 			m_bestCompat		= true;
+	if (varMap.count("debug")) 					gm_debug					= varMap["debug"].as<uint16_t>();
+	if (varMap.count("train-data"))				m_traindata					= varMap["train-data"].as<string>();
+	if (varMap.count("test-data"))				m_testdata					= varMap["test-data"].as<string>();
+	if (varMap.count("seed"))					m_seed						= varMap["seed"].as<int>();
+	if (varMap.count("generations"))			m_genmax					= varMap["generations"].as<uint32_t>();
+	if (varMap.count("population-size"))		m_maxPop					= varMap["population-size"].as<uint16_t>();
+	if (varMap.count("compat-excess"))			gm_compat_excess 			= varMap["compat-excess"].as<float>();
+	if (varMap.count("compat-disjoint"))		gm_compat_disjoint 			= varMap["compat-disjoint"].as<float>();
+	if (varMap.count("compat-weight"))			gm_compat_weight 			= varMap["compat-weight"].as<float>();
+	if (varMap.count("best-compat")) 			m_bestCompat				= true;
+	if (varMap.count("perturb-stdev"))			m_weightPerturbStdev 		= varMap["perturb-stdev"].as<float>();
+
 
 	if (varMap.count("print-population"))			m_printPopulation 		= true;
 	if (varMap.count("print-population-file"))		m_printPopulationFile 	= varMap["print-population-file"].as<string>();
@@ -289,11 +292,15 @@ int main(int argc, char *argv[])
 
 		// Dynamic source of Gaussian randomness, for weight mutations.
 		// Inits: (mean,stdev)
-		// stdev 
 		static float adaptiveStDev;
-		// adaptiveStDev = 100/log(g_generationNumber+10)-10;
-		// adaptiveStDev = (sin((float)g_generationNumber/20.0)+1.0)*49.0+1.0;
-		adaptiveStDev = 1.0;
+		if(m_weightPerturbStdev != FLT_MAX)
+			adaptiveStDev = m_weightPerturbStdev;
+		else
+		{
+			// adaptiveStDev = 100/log(g_generationNumber+10)-10;
+			// adaptiveStDev = (sin((float)g_generationNumber/20.0)+1.0)*49.0+1.0;
+			adaptiveStDev = 1.0;
+		}
 		g_rnd_gauss.param( boost::random::normal_distribution<>::param_type( 0.0, adaptiveStDev ) );
 
 
@@ -568,13 +575,6 @@ int main(int argc, char *argv[])
 		// TODO Convert fitness to adjustedFitness
 		// TODO use a ratio of sum(adjustedFitness)
 
-		/* Speciation
-		 */
-
-		// TODO need an updateSpecies routine that updates the best fitness of all species and keeps track of last time fitness improved.
-		// Clear out empty species (how do species extinguish themselves?)
-		// TODO may need to use species' ages to boost adjFitness to allow young species to take hold. lookfor species::adjust_fitness()
-
 
 
 	// Generation loop control
@@ -620,68 +620,3 @@ bool sortIdThenTime( DataEntry const &first, DataEntry const &second )
 				return false;
 }
 
-
-
-
-
-// // Push a DataEntry through it
-// // cout << "Activation " << generationNumber << ": " << gentest.Activate( *(TrainingDB.begin()+generationNumber) ) << endl;
-
-// // Push the whole DB through
-// cout << "Activation " << generationNumber << ", fitness: " << gentest.GetFitness(&TrainingDB) << endl;
-
-// // Mutate add node
-// gentest.MutateAddNode();
-// // population.species.begin()->genomes.begin()->MutateAddNode();
-
-// // Mutate add connection
-// gentest.MutateAddConnection(rng_gauss);
-
-// // Print
-// string filename = "gentest" + to_string(generationNumber) + ".gv";
-// gentest.PrintToGV(filename);
-
-
-
-
-// // Test: create two genomes and mate them
-// Genome gen1(g_inputs);
-// Genome gen2(g_inputs);
-
-// // Mutate them a bit
-// gen1.MutatePerturbWeights();
-// gen1.MutateAddNode();
-// gen1.MutateAddConnection();
-// gen1.MutateAddNode();
-
-// gen2.MutatePerturbWeights();
-// gen2.MutateAddNode();
-// gen2.MutateAddConnection();
-// gen2.MutateAddNode();
-// gen2.MutateAddConnection();
-// gen2.MutateAddNode();
-
-// gen1.fitness = gen1.GetFitness(&TrainingDB);
-// gen2.fitness = gen2.GetFitness(&TrainingDB);
-
-// Genome gen3 = MateGenomes(&gen1, &gen2);
-
-// cout << "\nFirst parent\n";
-// gen1.Print();
-// gen1.PrintToGV("gen1.gv");
-
-// cout << "\nSecond parent\n";
-// gen2.Print();
-// gen2.PrintToGV("gen2.gv");
-
-// cout << "\nOffspring\n";
-// gen3.Print();
-// gen3.PrintToGV("gen3.gv");
-
-
-
-
-// Species s2(++g_newSpeciesId, g_generationNumber);
-// s2.genomes.push_back( Genome(g_inputs) );
-// s2.genomes.push_back( Genome(g_inputs) );
-// population->species.push_back(s2);
