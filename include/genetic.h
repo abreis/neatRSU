@@ -21,6 +21,11 @@ using namespace std;
    ----------- */
 enum NodeType { SENSOR, HIDDEN, OUTPUT, BIAS };
 
+// Global innovation number
+extern uint16_t g_innovations;
+// List of innovations (pair(fromNode,toNode),innov#)
+extern map<pair<uint16_t,uint16_t>,uint16_t> g_innovationList; 
+
 
 /* Functions
    --------- */
@@ -97,8 +102,8 @@ class Genome
 public:
 	// List of nodes. Each nodeID is unique, so we use an std::map
 	map<uint16_t, NodeGene> nodes;
-	// List of connections. We use the from->to nodeIDs as keys
-	map<pair<uint16_t,uint16_t>, ConnectionGene> connections;
+	// List of connections. We use the innovation as key.
+	map<uint16_t, ConnectionGene> connections;
 
 	// The current fitness and adjusted fitness of this genome
 	double fitness = 0;

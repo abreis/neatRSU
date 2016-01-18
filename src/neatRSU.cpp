@@ -445,7 +445,7 @@ int main(int argc, char *argv[])
 						{ minDistance = iterCompat->second; mostCompatSpecies = iterCompat->first; }
 
 				if(gm_debug) 
-					cout 	<< "DEBUG Determined best compatibility " << minDistance 
+					cout 	<< "DEBUG Determined best compatibility " << setprecision(2) << fixed << minDistance 
 							<< " with species " << mostCompatSpecies->id
 							<< " for genome " << hex << iterGenome->id << dec
 							<< endl;

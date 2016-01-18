@@ -1,13 +1,7 @@
 #include "genetic.h"
 
-// Global innovation number
 uint16_t g_innovations = 0;
-// List of innovations (pair(fromNode,toNode),innov#)
 map<pair<uint16_t,uint16_t>,uint16_t> g_innovationList; 
-
-
-/* Functions
- */
 
 
 double ActivationSigmoid (double input)
@@ -46,7 +40,7 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 		{ mostFitGenome = secondParent; leastFitGenome = firstParent; }
 
 	// Run through most fit parent's ConnectionGenes
-	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator
+	for(map<uint16_t, ConnectionGene>::const_iterator
 		iterGenesOnMostFit = mostFitGenome->connections.begin();
 		iterGenesOnMostFit != mostFitGenome->connections.end();
 		iterGenesOnMostFit++)
@@ -70,7 +64,7 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 			else
 			{
 				// Key of the new ConnectionGene (should be the same on mostFit, leastFit, and offspring)
-				pair<uint16_t,uint16_t> geneKey = iterGenesOnMostFit->first;
+				uint16_t geneKey = iterGenesOnMostFit->first;
 				assert(geneKey == iterGeneOnLeastFit->first);
 
 				// Either (or both) are enabled, so do the copy 50/50
@@ -107,46 +101,24 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 }
 
 
-double Compatibility(Genome* gen1, Genome* gen2)
+double Compatibility(Genome* const gen1, Genome* const gen2)
 {
 	double excessGenes = 0.0;
 	double disjointGenes = 0.0;
 	double totalWeightDifference = 0.0;
 	double matchingGenes = 0.0;
 
-	// Sort connection vectors
-	// sort(gen1->connections.begin(), gen1->connections.end());
-	// sort(gen2->connections.begin(), gen2->connections.end());
-
-	// // Assert whether connection vectors are sorted. TODO: remove this
-	// if(gm_debug)
-	// {
-	// 	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
-	// 		iterConn = gen1->connections.begin();
-	// 	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
-	// 		iterPrev = gen1->connections.begin();
-
-	// 	for(advance(iterConn, 1);
-	// 		iterConn != gen1->connections.end();
-	// 		iterConn++)
-	// 		{
-	// 			if(iterConn->second.innovation <= iterPrev->second.innovation )
-	// 				{ cout << "ERROR Connection vector not sorted." << endl; exit(1); }
-	// 			iterPrev++;
-	// 		}
-	// }
-
 	// Find N, the #genes in the larger genome
 	uint16_t genesInLargerGenome = max(gen1->connections.size(), gen2->connections.size());
 
 	// Count disjoint and excess genes. Uses innovation.
-	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator iterGen1 = gen1->connections.begin();
-	map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator iterGen2 = gen2->connections.begin();
+	map<uint16_t, ConnectionGene>::const_iterator iterGen1 = gen1->connections.begin();
+	map<uint16_t, ConnectionGene>::const_iterator iterGen2 = gen2->connections.begin();
 
 	// Loop until both iterators are at the end
 	while( !(iterGen1==gen1->connections.end()) or !(iterGen2==gen2->connections.end()) )
 	{
-		// Connection vector should be naturally sorted by innovation.
+		// Connection vector is naturally sorted by innovation (key).
 		if( iterGen1==gen1->connections.end() )
 		{
 			// Gen1 ended, but Gen2 didn't (or the while() would have stopped),
@@ -281,41 +253,47 @@ bool Genome::AddConnection(uint16_t from, uint16_t to, bool reenable, double inW
 	// 03 If it doesn't exist, create it and return true.
 	// 04 Else return false.
 
-	// 01 See if the pair exists.
-	auto iterFindConn = connections.find(make_pair(from,to));
-	if( iterFindConn != connections.end() )
+	// See if the pair exists in the list of innovations.
+	map<pair<uint16_t,uint16_t>,uint16_t>::const_iterator 
+		iterInnov = g_innovationList.find(make_pair(from,to));
+
+	// If we didn't reach the end, this pair already exists as an innovation.
+	if( iterInnov != g_innovationList.end() )
 	{
-		// 02 If it exists, is disabled, and reenable==true, enable the pair and return true. 
-		if(!iterFindConn->second.enabled and reenable)
+		// Innovation exists. See if the genome has it.
+		map<uint16_t, ConnectionGene>::iterator iterFindConn = connections.find(iterInnov->second);
+		if(iterFindConn != connections.end())
 		{
-			iterFindConn->second.enabled = true;
-			// If a weight was specified, replace it too.
-			if(inWeight != DBL_MAX) iterFindConn->second.weight = inWeight;
+			// Genome already has this innovation.
+			// If it exists, is disabled, and reenable==true, enable the pair and return true. 
+			if(!iterFindConn->second.enabled and reenable)
+			{
+				iterFindConn->second.enabled = true;
+				// If a weight was specified, replace it too.
+				if(inWeight != DBL_MAX) iterFindConn->second.weight = inWeight;
+				return true;
+			}
+			else return false;
+		}
+		else
+		{
+			// Genome does not have this innovation. Add.
+			connections[iterInnov->second] = ConnectionGene(from, to, iterInnov->second,  ( (inWeight==DBL_MAX)?1.0:inWeight )  );
 			return true;
 		}
 	}
-	// 03 If it doesn't exist, create it and return true.
-	else 
+	else
 	{
-		// Innovation handling.
-		// First see if our pair exists in the innovation list
-		uint16_t pairInnovation = 0;
-		auto iterInnov = g_innovationList.find(make_pair(from,to));
-		if( iterInnov == g_innovationList.end())
-		{
-			// We didn't find this pair in the innovation list. Increment and add.
-			g_innovations++; 
-			pairInnovation = g_innovations; 
-			g_innovationList[make_pair(from,to)] = g_innovations;
-		}
-		else
-			// Innovation already existed, use it.
-			pairInnovation = iterInnov->second;
+		// Innovation doesn't exist. Increment and add to innovations.
+		g_innovations++; 
+		g_innovationList[make_pair(from,to)] = g_innovations;
 
-		connections[make_pair(from,to)] = ConnectionGene(from, to, pairInnovation,  ( (inWeight==DBL_MAX)?1.0:inWeight )  );
+		// Now add to genome
+		connections[g_innovations] = ConnectionGene(from, to, g_innovations,  ( (inWeight==DBL_MAX)?1.0:inWeight )  );
 		return true;
 	}
-	// 04 Else return false.
+
+	// Else return false.
 	return false;
 }
 
@@ -343,7 +321,7 @@ double Genome::Activate(DataEntry data)
 	nodes[d_biasnode].valueLast = 1.0;
 
 	// Run through each connection
-	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+	for(map<uint16_t, ConnectionGene>::const_iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
@@ -453,7 +431,7 @@ void Genome::WipeMemory(void)
 void Genome::MutatePerturbWeights(void)
 {
 	// Go through each connection, perturb its weight.
-		for(map<pair<uint16_t,uint16_t>, ConnectionGene>::iterator 
+		for(map<uint16_t, ConnectionGene>::iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
@@ -523,7 +501,7 @@ void Genome::MutateAddNode(void)
 	boost::random::uniform_int_distribution<> randomConnection(0, (int)(connections.size()-1) );
 
 	// Get a connection that isn't disabled
-	map<pair<uint16_t,uint16_t>, ConnectionGene>::iterator iterConnection;
+	map<uint16_t, ConnectionGene>::iterator iterConnection;
 	do
 	{
 		// Pull a random number
@@ -549,7 +527,7 @@ void Genome::MutateAddNode(void)
 uint16_t Genome::CountEnabledGenes(void)
 {
 	uint16_t count = 0;
-	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+	for(map<uint16_t, ConnectionGene>::const_iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
@@ -598,7 +576,7 @@ void Genome::Print(ostream& outstream)
 			<< "Path   Enable   Weight          Innov" << '\n'
 			<< "-------------------------------------" << '\n';
 
-	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+	for(map<uint16_t, ConnectionGene>::const_iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
@@ -653,7 +631,7 @@ void Genome::PrintToGV(string filename)
 	gvout << "\tnode [shape=circle,style=filled,fillcolor=white,fontcolor=black];\n";
 
 	// Output connections
-	for(map<pair<uint16_t,uint16_t>, ConnectionGene>::const_iterator 
+	for(map<uint16_t, ConnectionGene>::const_iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
