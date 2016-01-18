@@ -31,6 +31,7 @@ uint16_t d_firsthidnode = g_inputs+3;
 float gm_compat_excess 		= 1.0;
 float gm_compat_disjoint 	= 1.0;
 float gm_compat_weight 		= 0.4;	// flip to 3.0 for a larger population (e.g. 1000)
+bool  gm_limitInitialGrowth = false;
 
 float g_m_p_mutate_weights 			= 0.80;
 float g_m_p_weight_perturb_or_new 	= 0.90;
@@ -97,6 +98,7 @@ int main(int argc, char *argv[])
 		("compat-weight",		boost::program_options::value<float>(),		"compatibility weight c3")
 		("perturb-stdev",		boost::program_options::value<float>(),		"standard deviation of gaussian perturb weights")
 	    ("best-compat", 													"enable best compatibility speciation")
+	    ("limit-growth", 													"limits initial growth to 2*size(species)")
 		("print-population", 													"print population statistics")
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 		("print-speciesstack-file", boost::program_options::value<string>(), 	"print graph of species size to a file")
@@ -124,6 +126,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("compat-weight"))			gm_compat_weight 			= varMap["compat-weight"].as<float>();
 	if (varMap.count("best-compat")) 			m_bestCompat				= true;
 	if (varMap.count("perturb-stdev"))			m_weightPerturbStdev 		= varMap["perturb-stdev"].as<float>();
+	if (varMap.count("limit-growth")) 			gm_limitInitialGrowth		= true;
 
 
 	if (varMap.count("print-population"))			m_printPopulation 		= true;

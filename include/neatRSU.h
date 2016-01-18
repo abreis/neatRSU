@@ -33,6 +33,7 @@ extern uint16_t d_firsthidnode;
 extern float gm_compat_excess;
 extern float gm_compat_disjoint; 
 extern float gm_compat_weight; 
+extern bool  gm_limitInitialGrowth;
 
 extern float g_m_p_mutate_weights;
 extern float g_m_p_mutate_addnode;

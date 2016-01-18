@@ -632,8 +632,13 @@ void Genome::PrintToGV(string filename)
 
 void Species::Reproduce(uint16_t targetSpeciesSize)
 {
-	// Restrain the species to doubling in size, at most, on each iteration
-	uint16_t targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size()+1);
+	uint16_t targetSpeciesSizeAdj;
+	if(gm_limitInitialGrowth)
+		// Restrain the species to doubling in size, at most, on each iteration
+		targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size()+1);
+	else
+		// Immediately grow to target size
+		targetSpeciesSizeAdj = targetSpeciesSize;
 
 	// Vector to hold the new genomes
 	list<Genome> offsprings;
