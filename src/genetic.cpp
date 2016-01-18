@@ -32,9 +32,9 @@ Genome MateGenomes(Genome* const firstParent, Genome* const secondParent)
 	 */
 
 	// Find the most fit parent and iterate its ConnectionGenes.
-	// Less fitness is more fit.
+	// Less fitness is less fit.
 	Genome* mostFitGenome; Genome* leastFitGenome; 
-	if(firstParent->fitness < secondParent->fitness)
+	if(firstParent->fitness > secondParent->fitness)
 		{ mostFitGenome = firstParent; leastFitGenome = secondParent; }
 	else
 		{ mostFitGenome = secondParent; leastFitGenome = firstParent; }
@@ -374,39 +374,8 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 	}
 
 	if( isinf(rfitness) )
-		return DBL_MAX;
-	return rfitness;
-}
-
-
-void Genome::PrintGetFitness(vector<DataEntry>* database, ostream& outstream)
-{
-	cout << "Printing fitness details for Genome " << hex << id << dec << endl;
-
-	double rfitness = 0.0;
-
-	/* Go through every entry. Perform an activation, get the prediction.
-	 * Sum the square of errors.
-	 * IMPORTANT: the entry database must be sorted logically for recurrent networks to make sense 
-	 */
-	for(vector<DataEntry>::iterator 
-		iterDB = database->begin();
-		iterDB != database->end();
-		iterDB++)
-	{
-		double prediction = this->Activate(*iterDB);
-		rfitness += pow(prediction-iterDB->contact_time, 2);
-
-		cout 	<< iterDB->node_id << ','
-				<< iterDB->relative_time << ','
-				<< iterDB->latitude << ','
-				<< iterDB->longitude << ','
-				<< iterDB->speed << ','
-				<< iterDB->heading << '\t'
-				<< iterDB->contact_time << '\t'
-				<< prediction << '\n';
-	}
-	cout << "rfitness " << rfitness << '\n';
+		return 0;
+	return 1.0/rfitness;
 }
 
 
@@ -776,7 +745,7 @@ Genome* Species::FindChampion(void)
 		iterGenome = genomes.begin();
 		iterGenome != genomes.end();
 		iterGenome++)
-		if(iterGenome->fitness < champion->fitness)
+		if(iterGenome->fitness > champion->fitness)
 			champion = &(*iterGenome);
 
 	return champion;
@@ -824,10 +793,10 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 		// The champion is always kept intact, so the following must be true.
 		// With best-species placement however, genomes can jump a lot more and be pulled out
 		// of the species in which they are the champions.
-		// assert(iterSpecies->champion->fitness <= iterSpecies->bestFitness);
+		// assert(iterSpecies->champion->fitness >= iterSpecies->bestFitness);
 
 		// If the champion's fitness improved since the last generation, we record that.
-		if(iterSpecies->champion->fitness < iterSpecies->bestFitness)
+		if(iterSpecies->champion->fitness > iterSpecies->bestFitness)
 		{
 			iterSpecies->lastImprovementGeneration = g_generationNumber; 
 			iterSpecies->bestFitness = iterSpecies->champion->fitness;
@@ -841,7 +810,7 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
 		iterSpecies++)
-		if(iterSpecies->bestFitness < bestSpecies->bestFitness)
+		if(iterSpecies->bestFitness > bestSpecies->bestFitness)
 			bestSpecies = &(*iterSpecies);
 
 	bestFitness = bestSpecies->bestFitness;

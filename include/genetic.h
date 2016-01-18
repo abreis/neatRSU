@@ -106,8 +106,8 @@ public:
 	map<uint16_t, ConnectionGene> connections;
 
 	// The current fitness and adjusted fitness of this genome
-	double fitness = DBL_MAX;
-	double adjFitness = DBL_MAX;
+	double fitness = 0;
+	double adjFitness = 0;
 
 	// A unique random identifier for this genome.
 	uint64_t id = 0; 
@@ -136,9 +136,6 @@ public:
 	// Run a complete DB through this genome, compute every prediction, and return fitness.
 	// If store==true, store each prediction in the database at database[i]->prediction;
 	double GetFitness(vector<DataEntry>* database, bool store=false);
-
-	// Prints the fitness calculations
-	void PrintGetFitness(vector<DataEntry>* database, ostream& outstream);
 
 	// Wipe the values inside the nodes.
 	void WipeMemory(void);
@@ -169,9 +166,9 @@ public:
 	// Print the contents of this Genome as Graphviz language to a file
 	void PrintToGV(string filename);
 
-	// Sorting performed by fitness (lowest value to highest -> highest fitness to lowest)
+	// Sorting performed by fitness (highest value to lowest -> highest fitness to lowest)
 	bool operator < (const Genome& gen) const
-		{ return (fitness < gen.fitness); }
+		{ return (fitness > gen.fitness); }
 };
 
 
@@ -184,7 +181,7 @@ public:
 	uint16_t id = UINT16_MAX; 
 	uint32_t creation = UINT32_MAX;
 	
-	double bestFitness = DBL_MAX;	// Best possible fitness is=0
+	double bestFitness = 0;	// Best possible fitness is=1
 	uint32_t lastImprovementGeneration;
 
 	// For tracking the species champion.
@@ -212,7 +209,7 @@ public:
 class Population
 {
 public:
-	double bestFitness = DBL_MAX;	// Best possible fitness is=0
+	double bestFitness = 0;	// Best possible fitness is=1
 	Species* bestSpecies;
 	Genome* superChampion;
 

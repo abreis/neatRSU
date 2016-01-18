@@ -384,7 +384,7 @@ int main(int argc, char *argv[])
 			iterSpecies++)
 		{
 			// Clone each species with only the champion genome on them.
-			assert(iterSpecies->bestFitness <= iterSpecies->champion->fitness);
+			assert(iterSpecies->bestFitness >= iterSpecies->champion->fitness);
 
 			Species speciesCopy = Species(iterSpecies->id, iterSpecies->creation);
 			speciesCopy.bestFitness = iterSpecies->bestFitness;
