@@ -70,11 +70,12 @@ int main(int argc, char *argv[])
 	// Defaults
 	string 		m_traindata				= "";
 	string 		m_testdata 				= "";
+	string 		m_genomeFile			= "";
 	int 		m_seed					= 0;
 	uint32_t 	m_genmax				= 1;
 	uint16_t 	m_maxPop				= 150;
 	bool 		m_bestCompat			= false;
-
+	bool		m_seedGenome			= false;
 	bool 		m_printPopulation		= false;
 	string 		m_printPopulationFile 	= "";
 	string 		m_printSpeciesStackFile = "";
@@ -93,6 +94,8 @@ int main(int argc, char *argv[])
 	cliOptDesc.add_options()
 		("train-data", 				boost::program_options::value<string>(), 	"location of training data CSV")
 		("test-data", 				boost::program_options::value<string>(), 	"location of test data CSV")
+		("genome-file", 			boost::program_options::value<string>(), 	"load a genome from a CSV file")
+	    ("seed-genome", 														"uses the loaded genome as the first seed")
 		("seed", 					boost::program_options::value<int>(), 		"random number generator seed")
 		("generations", 			boost::program_options::value<uint32_t>(),	"number of generations to perform")
 		("population-size", 		boost::program_options::value<uint16_t>(),	"maximum population size")
@@ -124,6 +127,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("debug")) 					gm_debug					= varMap["debug"].as<uint16_t>();
 	if (varMap.count("train-data"))				m_traindata					= varMap["train-data"].as<string>();
 	if (varMap.count("test-data"))				m_testdata					= varMap["test-data"].as<string>();
+	if (varMap.count("genome-file"))			m_genomeFile				= varMap["genome-file"].as<string>();
 	if (varMap.count("seed"))					m_seed						= varMap["seed"].as<int>();
 	if (varMap.count("generations"))			m_genmax					= varMap["generations"].as<uint32_t>();
 	if (varMap.count("population-size"))		m_maxPop					= varMap["population-size"].as<uint16_t>();
@@ -136,7 +140,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("kill-stagnated"))			m_killStagnated				= varMap["kill-stagnated"].as<uint32_t>();
 	if (varMap.count("refocus-stagnated"))		m_refocusStagnated			= varMap["refocus-stagnated"].as<uint32_t>();
 	if (varMap.count("target-species"))			m_targetSpecies				= varMap["target-species"].as<uint16_t>();
-
+	if (varMap.count("seed-genome"))			m_seedGenome	 			= true;
 	if (varMap.count("print-population"))			m_printPopulation 		= true;
 	if (varMap.count("print-population-file"))		m_printPopulationFile 	= varMap["print-population-file"].as<string>();
 	if (varMap.count("print-speciesstack-file"))	m_printSpeciesStackFile = varMap["print-speciesstack-file"].as<string>();
@@ -146,6 +150,9 @@ int main(int argc, char *argv[])
 
 	if(m_refocusStagnated>m_killStagnated)
 		{cout << "ERROR --refocus-stagnated must be inferior to --kill-stagnated."; exit(1); }
+
+	if(m_seedGenome and m_genomeFile.empty())
+		{cout << "ERROR --seed-genome requires --genome-file."; exit(1); }
 
 
 	/***
@@ -232,10 +239,69 @@ int main(int argc, char *argv[])
 	}
 
 
+	/***
+	 *** A3 Load genome from file
+	 ***/
+
+	Genome genomeFile;
+	if(!m_genomeFile.empty())
+	{
+		// Load data
+	 	cout << "INFO\tLoading genome from " << m_genomeFile << " into memory... " << flush;
+
+		ifstream genomeIn( m_genomeFile.c_str() );
+		if (!genomeIn.is_open()) { cout << "\nERROR\tFailed to open file." << endl; exit(1); }
+
+		// Setup boost::tokenizer
+		vector<string> fields; string line;
+		while (getline(genomeIn,line))
+		{
+			// Tokenize the line into 'fields'
+			boost::tokenizer< boost::escaped_list_separator<char> > tok(line);
+			fields.assign(tok.begin(),tok.end());
+
+			if(fields[0] == "id")
+			{
+				stringstream ss;
+				ss << hex << fields[1];
+				ss >> genomeFile.id;
+			} 
+			else if(fields[0] == "node")
+			{
+				uint16_t newNodeID = boost::lexical_cast<uint16_t>(fields[1]);
+				NodeType newNodeType = NodeType::HIDDEN;
+
+				if(fields[2] == "Sen") 		newNodeType = NodeType::SENSOR;
+				else if(fields[2] == "Out") newNodeType = NodeType::OUTPUT;
+				else if(fields[2] == "Bia") newNodeType = NodeType::BIAS;
+				else if(fields[2] == "Hid") newNodeType = NodeType::HIDDEN;
+				
+				genomeFile.nodes[newNodeID] = NodeGene(newNodeID, newNodeType);
+			}
+			else if(fields[0] == "link")
+			{
+				ConnectionGene newConnection;
+				newConnection.from_node 	= boost::lexical_cast<uint16_t>(fields[1]);
+				newConnection.to_node 		= boost::lexical_cast<uint16_t>(fields[2]);
+				newConnection.weight 		= boost::lexical_cast<double>(fields[3]);
+				newConnection.enabled 		= boost::lexical_cast<bool>(fields[4]);
+				newConnection.innovation 	= boost::lexical_cast<uint16_t>(fields[5]);
+
+				// Update the innovations list
+				if(m_seedGenome)
+					g_innovationList[make_pair(newConnection.from_node,newConnection.to_node)] = newConnection.innovation;
+
+				genomeFile.connections[newConnection.innovation] = newConnection;
+			}
+		}
+
+		genomeIn.close();
+		cout << "done." << endl;
+	}
 
 
 	/***
-	 *** A3 Initialize global Random Number Generators
+	 *** A4 Initialize global Random Number Generators
 	 ***/
 
 	cout << "INFO\tInitializing random number generators with seed " << m_seed << ".\n";
@@ -251,7 +317,7 @@ int main(int argc, char *argv[])
 
 
 	/***
-	 *** A4 Prepare output streams
+	 *** A5 Prepare output streams
 	 ***/
 
 	static ofstream ofPopSummary, ofSpeciesStack, ofFitness;
@@ -284,7 +350,10 @@ int main(int argc, char *argv[])
 	Species firstSpecies(++g_newSpeciesId, g_generationNumber);
 
 	// Push the first genome
-	firstSpecies.genomes.push_back( Genome(g_inputs) );
+	if(m_seedGenome)
+		firstSpecies.genomes.push_back( genomeFile );	
+	else
+		firstSpecies.genomes.push_back( Genome(g_inputs) );
 	population->species.push_back( firstSpecies );
 	population->species.back().champion = &( population->species.back().genomes.back() );
 

@@ -5,9 +5,11 @@ TODO
 ## Newest
 
 v Save genome to file
-- Load genome from file 
-  + evaluate DBs on it
-  + use as starting point
+v Load genome from file 
+-  evaluate DBs on it
+v  use as starting point
+
+- Add a mutation that deletes a hidden node and all links going to it (delete or disable?)
 
 v Fitness sharing
 v If the maximumFitness of a species does not improve for 15 generations, mate only the top two genes.

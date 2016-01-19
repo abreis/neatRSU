@@ -644,11 +644,11 @@ void Genome::SaveToFile(string filename)
 		csvout << "node," << iterNode->second.id << ',';
 		switch(iterNode->second.type)
 		{
-			case NodeType::SENSOR: 	csvout << "Sen "; break;
-			case NodeType::OUTPUT: 	csvout << "Out "; break;
-			case NodeType::HIDDEN: 	csvout << "Hid "; break;
-			case NodeType::BIAS: 	csvout << "Bia "; break;
-			default:				csvout << "ERR "; break;
+			case NodeType::SENSOR: 	csvout << "Sen"; break;
+			case NodeType::OUTPUT: 	csvout << "Out"; break;
+			case NodeType::HIDDEN: 	csvout << "Hid"; break;
+			case NodeType::BIAS: 	csvout << "Bia"; break;
+			default:				csvout << "ERR"; break;
 		}
 		csvout << '\n';
 	}
