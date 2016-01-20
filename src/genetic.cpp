@@ -369,7 +369,7 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 		iterDB++)
 	{
 		double prediction = this->Activate(*iterDB);
-		rfitness += pow(prediction-iterDB->contact_time, 2);
+		rfitness += pow(prediction - iterDB->contact_time, 2);
 		if(store) iterDB->prediction=prediction;
 	}
 
@@ -921,6 +921,18 @@ void Species::Print(ostream& outstream)
 void Population::UpdateSpeciesAndPopulationStats(void)
 {
 
+	cout << "DEBUG updateChamps" << endl;
+	cout << "\tSpeciesPreUpdate " << endl;
+	for(list<Species>::iterator 
+		iterSpecies = species.begin();
+		iterSpecies != species.end();
+		iterSpecies++)
+		cout 	<< "\t\tSpecies " << iterSpecies->id 
+				<< " fit " << iterSpecies->bestFitness
+				<< " champ " << hex << iterSpecies->champion->id << dec
+				<< " fit " << iterSpecies->champion->fitness
+				<< endl;
+
 	for(list<Species>::iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
@@ -942,6 +954,18 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 		}
 	}
 
+	cout << "\tSpeciesPostUpdate " << endl;
+	for(list<Species>::iterator 
+		iterSpecies = species.begin();
+		iterSpecies != species.end();
+		iterSpecies++)
+		cout 	<< "\t\tSpecies " << iterSpecies->id 
+				<< " fit " << iterSpecies->bestFitness
+				<< " champ " << hex << iterSpecies->champion->id << dec
+				<< " fit " << iterSpecies->champion->fitness
+				<< endl;
+
+
 	// Now find the best species
 	bestSpecies = &( species.front() );
 
@@ -954,6 +978,13 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 
 	bestFitness = bestSpecies->bestFitness;
 	superChampion = bestSpecies->champion;
+
+	cout << "\tWe report" 
+			<< " bestSpecies " << bestSpecies->id 
+			<< " fit " << bestFitness 
+			<< " superchamp " << hex << superChampion->id << dec
+			<< " fit " << superChampion->fitness
+			<< endl;
 }
 
 
@@ -1018,10 +1049,11 @@ void Population::PrintVerticalSpeciesStack(ostream& outstream)
 
 void Population::PrintFitness(ostream& outstream, vector<DataEntry>* database1, vector<DataEntry>* database2)
 {
-	double db1Fit = superChampion->GetFitness(database1);
-	double db2Fit = superChampion->GetFitness(database2);
 	outstream << setw(6) << g_generationNumber 
-				<< ',' << fixed << setprecision(25) << db1Fit 
-				<< ',' << fixed << setprecision(25) << db2Fit 
-				<< '\n';
+				<< ',' << fixed << setprecision(25) << superChampion->GetFitness(database1);
+	
+	if(database2)
+		outstream	<< ',' << fixed << setprecision(25) << superChampion->GetFitness(database2);
+	
+	outstream	<< '\n';
 }
