@@ -314,6 +314,15 @@ double Genome::Activate(DataEntry data)
 	nodes[5].valueNow=data.speed;
 	nodes[6].valueNow=data.heading;
 
+	// If the nodeID changed, reset the memory of the network.
+	if(nodes[1].valueNow != nodes[1].valueLast)
+		for(map<uint16_t, NodeGene>::iterator 
+			iterNode = nodes.begin();
+			iterNode != nodes.end();
+			iterNode++)
+			if(iterNode->second.type==NodeType::HIDDEN or iterNode->second.type==NodeType::OUTPUT)
+				iterNode->second.valueNow = 0.0;
+		
 	// Move all valueNow to valueLast, reset valueNow
 	for(map<uint16_t, NodeGene>::iterator 
 		iterNode = nodes.begin();

@@ -84,7 +84,7 @@ public:
 	uint16_t	heading;
 	// uint16_t	rsu_id;
 	uint32_t	contact_time;
-	uint32_t	prediction=0;
+	double		prediction=0;
 
 	DataEntry(vector<string> in)
 	{

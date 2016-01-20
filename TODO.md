@@ -4,12 +4,14 @@ TODO
 
 ## Newest
 
+v Wipe the genome's memory on new nodeID incoming
+
+
 v Save genome to file
 v Load genome from file 
--  evaluate DBs on it
+v  evaluate DBs on it
 v  use as starting point
 
-- Wipe the genome's memory on new nodeID incoming
 
 v Add a mutation that deletes a hidden node and all links going to it (delete or disable?)
 v Print evolution of species size, numerically (for plotting) (gen,spec1size,spec2size,etc)

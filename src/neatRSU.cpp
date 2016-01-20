@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 	string 		m_traindata				= "";
 	string 		m_testdata 				= "";
 	string 		m_genomeFile			= "";
+	bool		m_testGenome			= false;
 	int 		m_seed					= 0;
 	uint32_t 	m_genmax				= 1;
 	uint16_t 	m_maxPop				= 150;
@@ -101,7 +102,8 @@ int main(int argc, char *argv[])
 		("train-data", 				boost::program_options::value<string>(), 	"location of training data CSV")
 		("test-data", 				boost::program_options::value<string>(), 	"location of test data CSV")
 		("genome-file", 			boost::program_options::value<string>(), 	"load a genome from a CSV file")
-	    ("seed-genome", 														"uses the loaded genome as the first seed")
+		("seed-genome", 														"uses the loaded genome as the first seed")
+		("test-genome", 														"runs the loaded genome on the databases")
 		("seed", 					boost::program_options::value<int>(), 		"random number generator seed")
 		("generations", 			boost::program_options::value<uint32_t>(),	"number of generations to perform")
 		("population-size", 		boost::program_options::value<uint16_t>(),	"maximum population size")
@@ -109,11 +111,11 @@ int main(int argc, char *argv[])
 		("compat-disjoint",			boost::program_options::value<float>(),		"compatibility weight c2")
 		("compat-weight",			boost::program_options::value<float>(),		"compatibility weight c3")
 		("perturb-stdev",			boost::program_options::value<float>(),		"standard deviation of gaussian perturb weights")
-	    ("best-compat", 														"enable best compatibility speciation")
-	    ("limit-growth", 														"limits initial growth to 2*size(species)")
-	    ("kill-stagnated", 			boost::program_options::value<uint32_t>(),	"removes species that stagnate after N generations")
-	    ("refocus-stagnated", 		boost::program_options::value<uint32_t>(),	"refocuses species that stagnate after N generations")
-	    ("target-species",	 		boost::program_options::value<uint16_t>(),	"targets N species with a self-adjusting threshold")
+		("best-compat", 														"enable best compatibility speciation")
+		("limit-growth", 														"limits initial growth to 2*size(species)")
+		("kill-stagnated", 			boost::program_options::value<uint32_t>(),	"removes species that stagnate after N generations")
+		("refocus-stagnated", 		boost::program_options::value<uint32_t>(),	"refocuses species that stagnate after N generations")
+		("target-species",	 		boost::program_options::value<uint16_t>(),	"targets N species with a self-adjusting threshold")
 		("print-population", 													"print population statistics")
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 		("print-speciesstack-file", boost::program_options::value<string>(), 	"print graph of species size to a file")
@@ -254,7 +256,7 @@ int main(int argc, char *argv[])
 
 
 	/***
-	 *** A3 Load genome from file
+	 *** A3a Load genome from file
 	 ***/
 
 	Genome genomeFile;
@@ -314,6 +316,47 @@ int main(int argc, char *argv[])
 	}
 
 
+
+
+	/***
+	 *** A3b If requested, test a loaded genome on the databases
+	 ***/ 
+	if(m_testGenome)
+	{
+		// Run the databases through the provided genome, and store the predictions.
+		genomeFile.GetFitness(&TrainingDB, true);
+
+		// File for writing.
+		ofstream ofTraining("training.csv");
+
+		// Output contact time and prediction
+		for(vector<DataEntry>::iterator 
+			iterDB = TrainingDB.begin();
+			iterDB != TrainingDB.end();
+			iterDB++)
+			ofTraining << iterDB->contact_time << ',' << iterDB->prediction << '\n';
+
+		// If a testing database was provided, repeat for the testing DB.
+		if(!m_testdata.empty())
+		{
+			ofstream ofTest("test.csv");
+			genomeFile.GetFitness(&TestDB, true);
+
+			for(vector<DataEntry>::iterator 
+				iterDB = TestDB.begin();
+				iterDB != TestDB.end();
+				iterDB++)
+				ofTest << iterDB->contact_time << ',' << iterDB->prediction << '\n';
+			
+		}
+
+		// Do nothing more.
+		return 0;
+	}
+
+
+
+
 	/***
 	 *** A4 Initialize global Random Number Generators
 	 ***/
@@ -326,6 +369,7 @@ int main(int argc, char *argv[])
 
 	// To draw random integers (e.g. to randomly select a node), use:
 	// boost::random::uniform_int_distribution<> dist(min, max);
+
 
 
 
@@ -347,6 +391,7 @@ int main(int argc, char *argv[])
 
 	if(!m_printFitnessFile.empty())
 		ofFitness.open(m_printFitnessFile.c_str());
+
 
 
 
@@ -373,6 +418,8 @@ int main(int argc, char *argv[])
 		firstSpecies.genomes.push_back( Genome(g_inputs) );
 	population->species.push_back( firstSpecies );
 	population->species.back().champion = &( population->species.back().genomes.back() );
+
+
 
 
 
