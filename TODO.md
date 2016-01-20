@@ -9,7 +9,7 @@ v Load genome from file
 -  evaluate DBs on it
 v  use as starting point
 
-- Add a mutation that deletes a hidden node and all links going to it (delete or disable?)
+v Add a mutation that deletes a hidden node and all links going to it (delete or disable?)
 - Print evolution of species size, numerically (for plotting) (gen,spec1size,spec2size,etc)
 
 

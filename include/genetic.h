@@ -151,6 +151,13 @@ public:
 	// Split a connection gene into two and add a node in the middle.
 	void MutateAddNode(void);
 
+	// Disables a random connection.
+	void MutateDisableConnection(void);
+
+	// Disables all connections going from and to a random hidden node.
+	void MutateDisableNode(void);
+
+
 
 	/* Auxiliary
 	 */

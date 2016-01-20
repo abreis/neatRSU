@@ -42,6 +42,8 @@ extern bool  gm_limitInitialGrowth;
 extern float g_m_p_mutate_weights;
 extern float g_m_p_mutate_addnode;
 extern float g_m_p_mutate_addconn;
+extern float g_m_p_mutate_disnode;
+extern float g_m_p_mutate_disconn;
 extern float g_m_p_weight_perturb_or_new; 	
 extern float g_m_p_inherit_disabled;
 extern float g_m_p_mutateOnly;

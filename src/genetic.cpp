@@ -469,14 +469,14 @@ void Genome::MutateAddNode(void)
 	// A [0,n-1] range lets us use std::advance more easily later on
 	boost::random::uniform_int_distribution<> randomConnection(0, (int)(connections.size()-1) );
 
-	// Get a connection that isn't disabled
+	// Get a connection that isn't disabled.
 	map<uint16_t, ConnectionGene>::iterator iterConnection;
 	do
 	{
-		// Pull a random number
+		// Pull a random number.
 		uint16_t rConnId = randomConnection(g_rng);
 
-		// Get an iterator to the connection
+		// Get an iterator to the connection.
 		iterConnection = connections.begin();
 		advance(iterConnection, rConnId);
 	} while (iterConnection->second.enabled != true);
@@ -484,13 +484,60 @@ void Genome::MutateAddNode(void)
 	// Disable it
 	iterConnection->second.enabled = false;
 
-	// Create a new node
+	// Create a new node.
 	uint16_t newNodeId = this->AddNode(NodeType::HIDDEN);
 
-	// Create connections from and to the new node
+	// Create connections from and to the new node.
 	this->AddConnection(iterConnection->second.from_node, newNodeId);
 	this->AddConnection(newNodeId, iterConnection->second.to_node, false, iterConnection->second.weight);	
 }
+
+
+
+void Genome::MutateDisableConnection(void)
+{
+	boost::random::uniform_int_distribution<> randomConnection(0, (int)(connections.size()-1) );
+
+	// Get a connection that isn't disabled.
+	map<uint16_t, ConnectionGene>::iterator iterConnection;
+	do
+	{
+		// Pull a random number.
+		uint16_t rConnId = randomConnection(g_rng);
+
+		// Get an iterator to the connection.
+		iterConnection = connections.begin();
+		advance(iterConnection, rConnId);
+	} while (iterConnection->second.enabled != true);
+
+	// Disable it.
+	iterConnection->second.enabled = false;
+}
+
+
+void Genome::MutateDisableNode(void)
+{
+	cout << "TEST DISABLE NODE " << endl;
+
+	// If there's no hidden nodes yet, do nothing.
+	if( nodes.size() < d_firsthidnode) return;
+	
+	// Pick a random hidden node
+	boost::random::uniform_int_distribution<> randomHidNode(d_firsthidnode-1, (int)(nodes.size()-1) );
+
+	uint16_t randomNodeId = randomHidNode(g_rng);
+	map<uint16_t, NodeGene>::const_iterator iterHidNode = nodes.begin();
+	advance(iterHidNode, randomNodeId);
+
+	// Disable all connections that involve this node.
+	for(map<uint16_t, ConnectionGene>::iterator 
+		iterConn = connections.begin();
+		iterConn != connections.end();
+		iterConn++)
+		if( (iterConn->second.from_node == iterHidNode->first) or (iterConn->second.to_node == iterHidNode->first) )
+			iterConn->second.enabled = false;
+}
+
 
 
 pair<uint16_t,uint16_t> Genome::CountEnabledGenes(void)
@@ -760,6 +807,10 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 						child.MutateAddNode();
 					else if(OneShotBernoulli(g_m_p_mutate_addconn))
 						child.MutateAddConnection();
+					else if(OneShotBernoulli(g_m_p_mutate_disconn))
+						child.MutateDisableConnection();
+					else if(OneShotBernoulli(g_m_p_mutate_disnode))
+						child.MutateDisableNode();
 					else
 						if(OneShotBernoulli(g_m_p_mutate_weights))
 							child.MutatePerturbWeights();
@@ -785,6 +836,10 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 							child.MutateAddNode();
 						else if(OneShotBernoulli(g_m_p_mutate_addconn))
 							child.MutateAddConnection();
+						else if(OneShotBernoulli(g_m_p_mutate_disconn))
+							child.MutateDisableConnection();
+						else if(OneShotBernoulli(g_m_p_mutate_disnode))
+							child.MutateDisableNode();
 						else
 							if(OneShotBernoulli(g_m_p_mutate_weights))
 								child.MutatePerturbWeights();
