@@ -774,11 +774,16 @@ int main(int argc, char *argv[])
 			{ population->PrintVerticalSpeciesStack(ofSpeciesStack); ofSpeciesStack.flush(); }
 
 		if(!m_printFitnessFile.empty())
-			{ population->PrintFitness(ofFitness); ofFitness.flush(); }
+		{
+			if(!m_testdata.empty())
+				{ population->PrintFitness(ofFitness, &TrainingDB, &TestDB); ofFitness.flush(); }
+			else
+				{ population->PrintFitness(ofFitness, &TrainingDB); ofFitness.flush(); }
+		}
 
-		// Every generation, if the superchampion changed, print it
 		if( m_printSuperChampions and (population->bestFitness != lastBestFitness) )
 		{
+			// Every generation, if the superchampion changed, print it
 			lastBestFitness = population->bestFitness;
 			stringstream ssfilename;
 			ssfilename 	<< "superChampion" 

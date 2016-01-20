@@ -517,8 +517,6 @@ void Genome::MutateDisableConnection(void)
 
 void Genome::MutateDisableNode(void)
 {
-	cout << "TEST DISABLE NODE " << endl;
-
 	// If there's no hidden nodes yet, do nothing.
 	if( nodes.size() < d_firsthidnode) return;
 	
@@ -1018,7 +1016,12 @@ void Population::PrintVerticalSpeciesStack(ostream& outstream)
 }
 
 
-void Population::PrintFitness(ostream& outstream)
+void Population::PrintFitness(ostream& outstream, vector<DataEntry>* database1, vector<DataEntry>* database2)
 {
-	outstream << setw(6) << g_generationNumber << ',' << fixed << setprecision(15) << bestFitness << '\n';
+	double db1Fit = superChampion->GetFitness(database1);
+	double db2Fit = superChampion->GetFitness(database2);
+	outstream << setw(6) << g_generationNumber 
+				<< ',' << fixed << setprecision(25) << db1Fit 
+				<< ',' << fixed << setprecision(25) << db2Fit 
+				<< '\n';
 }

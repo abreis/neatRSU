@@ -250,7 +250,7 @@ public:
 	void PrintVerticalSpeciesStack(ostream& outstream);
 
 	// Prints a (generation,bestFitness) pair.
-	void PrintFitness(ostream& outstream);
+	void PrintFitness(ostream& outstream, vector<DataEntry>* database1, vector<DataEntry>* database2=0);
 };
 
 // For carrying pointers to the thread routine.
