@@ -32,6 +32,9 @@ extern map<pair<uint16_t,uint16_t>,uint16_t> g_innovationList;
 // Custom sigmoidal transfer function.
 double ActivationSigmoid (double input);
 
+// MATLAB's tansig transfer function.
+double ActivationMatlabTanSig (double input);
+
 // Output transfer function.
 double ActivationOutput (double input);
 

@@ -14,6 +14,12 @@ double ActivationSigmoid (double input)
 }
 
 
+double ActivationMatlabTanSig (double input)
+{
+	return ( 2/(1+exp(-2*input))-1 );
+}
+
+
 double ActivationOutput (double input)
 {
 	// Linear.
@@ -920,19 +926,6 @@ void Species::Print(ostream& outstream)
 
 void Population::UpdateSpeciesAndPopulationStats(void)
 {
-
-	cout << "DEBUG updateChamps" << endl;
-	cout << "\tSpeciesPreUpdate " << endl;
-	for(list<Species>::iterator 
-		iterSpecies = species.begin();
-		iterSpecies != species.end();
-		iterSpecies++)
-		cout 	<< "\t\tSpecies " << iterSpecies->id 
-				<< " fit " << iterSpecies->bestFitness
-				<< " champ " << hex << iterSpecies->champion->id << dec
-				<< " fit " << iterSpecies->champion->fitness
-				<< endl;
-
 	for(list<Species>::iterator 
 		iterSpecies = species.begin();
 		iterSpecies != species.end();
@@ -954,18 +947,6 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 		}
 	}
 
-	cout << "\tSpeciesPostUpdate " << endl;
-	for(list<Species>::iterator 
-		iterSpecies = species.begin();
-		iterSpecies != species.end();
-		iterSpecies++)
-		cout 	<< "\t\tSpecies " << iterSpecies->id 
-				<< " fit " << iterSpecies->bestFitness
-				<< " champ " << hex << iterSpecies->champion->id << dec
-				<< " fit " << iterSpecies->champion->fitness
-				<< endl;
-
-
 	// Now find the best species
 	bestSpecies = &( species.front() );
 
@@ -978,13 +959,6 @@ void Population::UpdateSpeciesAndPopulationStats(void)
 
 	bestFitness = bestSpecies->bestFitness;
 	superChampion = bestSpecies->champion;
-
-	cout << "\tWe report" 
-			<< " bestSpecies " << bestSpecies->id 
-			<< " fit " << bestFitness 
-			<< " superchamp " << hex << superChampion->id << dec
-			<< " fit " << superChampion->fitness
-			<< endl;
 }
 
 

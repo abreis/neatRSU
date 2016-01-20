@@ -785,13 +785,20 @@ int main(int argc, char *argv[])
 		{
 			// Every generation, if the superchampion changed, print it
 			lastBestFitness = population->bestFitness;
-			stringstream ssfilename;
-			ssfilename 	<< "superChampion" 
-						<< "_gen" << setfill('0') << setw(6) << g_generationNumber 
-						<< "_species" << setfill('0') << setw(3) << population->bestSpecies->id 
-						<< ".gv";
-			const string& filename = ssfilename.str();
-			population->superChampion->PrintToGV(filename.c_str());
+			stringstream ssfilenameGV, ssfilenameCSV;
+			ssfilenameGV 	<< "superChampion" 
+							<< "_gen" << setfill('0') << setw(6) << g_generationNumber 
+							<< "_species" << setfill('0') << setw(3) << population->bestSpecies->id 
+							<< ".gv";
+			const string& filenameGV = ssfilenameGV.str();
+			population->superChampion->PrintToGV(filenameGV.c_str());
+
+			ssfilenameCSV 	<< "superChampion" 
+				<< "_gen" << setfill('0') << setw(6) << g_generationNumber 
+				<< "_species" << setfill('0') << setw(3) << population->bestSpecies->id 
+				<< ".csv";
+			const string& filenameCSV = ssfilenameGV.str();
+			population->superChampion->SaveToFile(filenameCSV.c_str());
 		}
 
 	// Generation loop control
