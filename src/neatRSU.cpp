@@ -779,7 +779,10 @@ int main(int argc, char *argv[])
 		{
 			lastBestFitness = population->bestFitness;
 			stringstream ssfilename;
-			ssfilename << "superChampion_gen" << setfill('0') << setw(6) << g_generationNumber << ".gv";
+			ssfilename 	<< "superChampion" 
+						<< "_gen" << setfill('0') << setw(6) << g_generationNumber 
+						<< "_species" << setfill('0') << setw(3) << population->bestSpecies->id 
+						<< ".gv";
 			const string& filename = ssfilename.str();
 			population->superChampion->PrintToGV(filename.c_str());
 		}
