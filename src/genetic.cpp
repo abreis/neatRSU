@@ -493,15 +493,23 @@ void Genome::MutateAddNode(void)
 }
 
 
-uint16_t Genome::CountEnabledGenes(void)
+pair<uint16_t,uint16_t> Genome::CountEnabledGenes(void)
 {
-	uint16_t count = 0;
+	set<uint16_t> nodeCount;
+	uint16_t connCount = 0;
+
 	for(map<uint16_t, ConnectionGene>::const_iterator 
 		iterConn = connections.begin();
 		iterConn != connections.end();
 		iterConn++)
-		if(iterConn->second.enabled) count++;
-	return count;
+		if(iterConn->second.enabled)
+		{
+			connCount++;
+			nodeCount.insert(iterConn->second.from_node);	
+			nodeCount.insert(iterConn->second.to_node);	
+		}
+
+	return make_pair((uint16_t)nodeCount.size(),connCount);
 }
 
 
@@ -910,13 +918,14 @@ void Population::PrintSummary(ostream& outstream)
 		iterSpecies != species.end();
 		iterSpecies++)
 	{
+		pair<uint16_t,uint16_t> championGeneCount = iterSpecies->champion->CountEnabledGenes();
 		if(&(*iterSpecies) == bestSpecies) outstream << '*';
 		outstream 	<< iterSpecies->id << '\t'
 					<< iterSpecies->creation << '\t'
 					<< iterSpecies->genomes.size() << '\t'
 					<< (g_generationNumber - iterSpecies->lastImprovementGeneration) << '\t'
 					<< '\t' << iterSpecies->bestFitness << '\t'
-					<< iterSpecies->champion->nodes.size() << ',' << iterSpecies->champion->connections.size() 
+					<< championGeneCount.first << ',' << championGeneCount.second 
 					<< '\n';
 	}
 

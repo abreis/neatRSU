@@ -155,7 +155,7 @@ public:
 	/* Auxiliary
 	 */
 	// Count the number of ConnectionGenes that are not disabled.
-	uint16_t CountEnabledGenes(void);
+	pair<uint16_t,uint16_t> CountEnabledGenes(void);
 
 	// Resets the nodes' memories.
 	void ResetNodes();
