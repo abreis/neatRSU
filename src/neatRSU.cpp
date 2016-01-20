@@ -358,7 +358,6 @@ int main(int argc, char *argv[])
 	population->species.back().champion = &( population->species.back().genomes.back() );
 
 
-
 	/***
 	 *** C0 Loop evolution until criteria match
 	 ***/
@@ -405,12 +404,25 @@ int main(int argc, char *argv[])
 		/* C1 Go through every genome: update fitness.
 		 */
 		
+
+		// Threads setup
+		pthread_t threads[NUM_THREADS];
+
+		// Array to store thread pointers
+		threadDataUpdateGenomeFitness td[NUM_THREADS];
+
 		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
 			iterSpecies != population->species.end();
 			iterSpecies++)
-			iterSpecies->UpdateGenomeFitness(&TrainingDB);
-		
+			{
+				int threadId = iterSpecies->id;
+				td[threadId].speciesPointer = &(*iterSpecies);
+				td[threadId].database = &TrainingDB;
+				pthread_create(&threads[threadId], NULL, ThreadUpdateGenomeFitness, (void *)&td[threadId]);
+
+			// iterSpecies->UpdateGenomeFitness(&TrainingDB);
+			}
 
 
 
@@ -756,6 +768,15 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+
+void *ThreadUpdateGenomeFitness(void *threadarg)
+{
+	threadDataUpdateGenomeFitness* threadPointers;
+	threadPointers = (threadDataUpdateGenomeFitness *) threadarg;
+	
+	threadPointers->speciesPointer->UpdateGenomeFitness(threadPointers->database);
+	pthread_exit(NULL);
+}
 
 bool OneShotBernoulli(float probability)
 {

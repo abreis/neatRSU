@@ -10,7 +10,7 @@ SRCDIR=src
 
 SOURCES=$(SRCDIR)/neatRSU.cpp $(SRCDIR)/genetic.cpp
 EXECUTABLE=neatRSU
-EXTRALIBS=-lboost_program_options
+EXTRALIBS=-lboost_program_options -lpthread
 
 INCLUDEDIRS=-I$(INCLUDEDIR) -I/usr/local/include
 LIBDIRS=-L/usr/local/lib

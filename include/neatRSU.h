@@ -16,7 +16,11 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/bernoulli_distribution.hpp>
 
+#include <pthread.h>
+
 using namespace std;
+
+#define NUM_THREADS     10
 
 
 /* Definitions
@@ -57,6 +61,9 @@ bool OneShotBernoulli(float probability);
 // Auxiliary for std::sort, will sort a database by nodeID, then time.
 class DataEntry;
 bool sortIdThenTime( DataEntry const &first, DataEntry const &second );
+
+// For pthreading.
+void *ThreadUpdateGenomeFitness(void *threadarg);
 
 
 /* Classes and Structs

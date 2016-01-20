@@ -243,4 +243,12 @@ public:
 	void PrintFitness(ostream& outstream);
 };
 
+// For carrying pointers to the thread routine.
+struct threadDataUpdateGenomeFitness
+{
+	Species* speciesPointer;
+	vector<DataEntry>* database;
+};
+
+
 #endif /* GENETIC_H_ */
