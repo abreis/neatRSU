@@ -207,6 +207,9 @@ public:
 	// Finds the best genome in the species and returns a pointer to it.
 	Genome* FindChampion(void);
 
+	// Update the fitness on all genomes. Ideal for pthreading.
+	void UpdateGenomeFitness(vector<DataEntry>* database);
+
 	// Prints a summary of the species statistics and its genomes.
 	void Print(ostream& outstream);
 };

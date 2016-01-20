@@ -818,6 +818,18 @@ Genome* Species::FindChampion(void)
 }
 
 
+
+void Species::UpdateGenomeFitness(vector<DataEntry>* database)
+{
+	for(list<Genome>::iterator
+		iterGenome = genomes.begin();
+		iterGenome != genomes.end();
+		iterGenome++)
+		iterGenome->fitness = iterGenome->GetFitness(database);
+}
+
+
+
 void Species::Print(ostream& outstream)
 {
 	// Header

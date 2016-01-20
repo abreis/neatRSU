@@ -409,13 +409,8 @@ int main(int argc, char *argv[])
 			iterSpecies = population->species.begin();
 			iterSpecies != population->species.end();
 			iterSpecies++)
-			for(list<Genome>::iterator
-				iterGenome = iterSpecies->genomes.begin();
-				iterGenome != iterSpecies->genomes.end();
-				iterGenome++)
-				iterGenome->fitness = iterGenome->GetFitness(&TrainingDB);
-
-
+			iterSpecies->UpdateGenomeFitness(&TrainingDB);
+		
 
 
 
