@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <list>
 
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
@@ -19,8 +20,6 @@
 #include <pthread.h>
 
 using namespace std;
-
-#define NUM_THREADS     10
 
 
 /* Definitions

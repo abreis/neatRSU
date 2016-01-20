@@ -188,6 +188,9 @@ public:
 	uint32_t lastImprovementGeneration;
 	uint32_t lastRefocusGeneration;
 
+	// For thread tracking.
+	bool thread_processing = false;
+
 	// For tracking the species champion.
 	Genome* champion;
 
@@ -246,7 +249,7 @@ public:
 // For carrying pointers to the thread routine.
 struct threadDataUpdateGenomeFitness
 {
-	Species* speciesPointer;
+	Population* populationPointer;
 	vector<DataEntry>* database;
 };
 

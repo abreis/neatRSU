@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
 	 */
 
 	// Defaults
+	uint16_t	m_threads				= 2;
 	string 		m_traindata				= "";
 	string 		m_testdata 				= "";
 	string 		m_genomeFile			= "";
@@ -92,6 +93,7 @@ int main(int argc, char *argv[])
 	// List of command line options
 	boost::program_options::options_description cliOptDesc("Options");
 	cliOptDesc.add_options()
+		("threads", 				boost::program_options::value<uint16_t>(),	"number of threads to run concurrently")
 		("train-data", 				boost::program_options::value<string>(), 	"location of training data CSV")
 		("test-data", 				boost::program_options::value<string>(), 	"location of test data CSV")
 		("genome-file", 			boost::program_options::value<string>(), 	"load a genome from a CSV file")
@@ -125,6 +127,7 @@ int main(int argc, char *argv[])
 
 	// Process options
 	if (varMap.count("debug")) 					gm_debug					= varMap["debug"].as<uint16_t>();
+	if (varMap.count("threads")) 				m_threads					= varMap["threads"].as<uint16_t>();
 	if (varMap.count("train-data"))				m_traindata					= varMap["train-data"].as<string>();
 	if (varMap.count("test-data"))				m_testdata					= varMap["test-data"].as<string>();
 	if (varMap.count("genome-file"))			m_genomeFile				= varMap["genome-file"].as<string>();
@@ -153,6 +156,9 @@ int main(int argc, char *argv[])
 
 	if(m_seedGenome and m_genomeFile.empty())
 		{cout << "ERROR --seed-genome requires --genome-file."; exit(1); }
+
+	if( (m_threads<1) or (m_threads>32) )
+		{cout << "ERROR --threads must be between 1 and 32."; exit(1); }
 
 
 	/***
@@ -358,10 +364,17 @@ int main(int argc, char *argv[])
 	population->species.back().champion = &( population->species.back().genomes.back() );
 
 
+
+
+
 	/***
 	 *** C0 Loop evolution until criteria match
 	 ***/
 	bool f_reachedTargetSpecies = false;
+
+	// Threads setup
+	vector<pthread_t> threads(m_threads);
+
 	do
 	{
 		if(gm_debug) cout << "DEBUG Generation " << g_generationNumber << endl;
@@ -402,27 +415,37 @@ int main(int argc, char *argv[])
 
 
 		/* C1 Go through every genome: update fitness.
+		 * This is the most intensive process, so we thread it for performance.
 		 */
-		
 
-		// Threads setup
-		pthread_t threads[NUM_THREADS];
+		// Thread pointers
+		threadDataUpdateGenomeFitness td;
+		td.populationPointer = population;
+		td.database = &TrainingDB;
 
-		// Array to store thread pointers
-		threadDataUpdateGenomeFitness td[NUM_THREADS];
+		// Launch m_threads. 
+		int rc, tId;
+		for(tId=0; tId < m_threads; ++tId )
+		{
+			rc = pthread_create(&threads[tId], NULL, ThreadUpdateGenomeFitness, (void *)&td);
+			assert (rc == 0);
+		}
 
+		// Wait for all threads to complete.
+		for (tId = 0; tId < m_threads; ++tId) {
+			// block until thread 'index' completes
+			rc = pthread_join(threads[tId], NULL);
+			assert(0 == rc);
+		}
+
+		// Put all iterSpecies->thread_processing back to false.
 		for(list<Species>::iterator 
 			iterSpecies = population->species.begin();
 			iterSpecies != population->species.end();
 			iterSpecies++)
-			{
-				int threadId = iterSpecies->id;
-				td[threadId].speciesPointer = &(*iterSpecies);
-				td[threadId].database = &TrainingDB;
-				pthread_create(&threads[threadId], NULL, ThreadUpdateGenomeFitness, (void *)&td[threadId]);
+			iterSpecies->thread_processing = false;
 
-			// iterSpecies->UpdateGenomeFitness(&TrainingDB);
-			}
+
 
 
 
@@ -774,7 +797,15 @@ void *ThreadUpdateGenomeFitness(void *threadarg)
 	threadDataUpdateGenomeFitness* threadPointers;
 	threadPointers = (threadDataUpdateGenomeFitness *) threadarg;
 	
-	threadPointers->speciesPointer->UpdateGenomeFitness(threadPointers->database);
+	for(list<Species>::iterator 
+		iterSpecies = threadPointers->populationPointer->species.begin();
+		iterSpecies != threadPointers->populationPointer->species.end();
+		iterSpecies++)
+		if(!iterSpecies->thread_processing)
+		{
+			iterSpecies->thread_processing = true;
+			iterSpecies->UpdateGenomeFitness(threadPointers->database);
+		}
 	pthread_exit(NULL);
 }
 
