@@ -16,6 +16,7 @@
 #include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/bernoulli_distribution.hpp>
+#include <boost/math/special_functions/fpclassify.hpp>
 
 #include <pthread.h>
 

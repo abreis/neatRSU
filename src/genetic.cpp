@@ -373,7 +373,7 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 		if(store) iterDB->prediction=prediction;
 	}
 
-	if( isinf(rfitness) )
+	if( boost::math::isinf(rfitness) )
 		return 0;
 	return 1.0/(rfitness+1.0);
 }
