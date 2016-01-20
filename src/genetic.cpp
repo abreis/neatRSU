@@ -737,10 +737,10 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 	uint16_t targetSpeciesSizeAdj;
 	if(gm_limitInitialGrowth)
 		// Restrain the species to doubling in size, at most, on each iteration
-		targetSpeciesSizeAdj = fmin(targetSpeciesSize, 2*genomes.size()+1);
+		targetSpeciesSizeAdj = fmin(targetSpeciesSize-1, 2*genomes.size()+1);
 	else
 		// Immediately grow to target size
-		targetSpeciesSizeAdj = targetSpeciesSize;
+		targetSpeciesSizeAdj = targetSpeciesSize-1;
 
 	// Vector to hold the new genomes
 	list<Genome> offsprings;
@@ -1019,6 +1019,28 @@ void Population::PrintVerticalSpeciesStack(ostream& outstream)
 
 	outstream << '\n';
 }
+
+
+void Population::PrintSpeciesSize(ostream& outstream)
+{
+	outstream << g_generationNumber;
+	uint16_t idCounter = 1;
+
+	list<Species>::const_iterator iterSpecies = species.begin();
+	for(; 
+		idCounter <= species.back().id;
+		idCounter++ )
+	{
+		if(idCounter==iterSpecies->id)
+			{ outstream << ',' << iterSpecies->genomes.size(); iterSpecies++; }
+		else if(idCounter<iterSpecies->id)
+			outstream << ',' << '0'; 
+		else
+			{ cout << "ERROR Printing species sizes." << endl; exit(1); }
+	}
+	outstream << '\n';
+}
+
 
 
 void Population::PrintFitness(ostream& outstream, vector<DataEntry>* database1, vector<DataEntry>* database2)

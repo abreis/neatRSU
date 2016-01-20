@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
 	bool 		m_printPopulation		= false;
 	string 		m_printPopulationFile 	= "";
 	string 		m_printSpeciesStackFile = "";
+	string 		m_printSpeciesSizeFile  = "";
 	string 		m_printFitnessFile		= "";
 	bool		m_printSuperChampions	= false;
 	float		m_weightPerturbStdev	= FLT_MAX;
@@ -116,6 +117,7 @@ int main(int argc, char *argv[])
 		("print-population", 													"print population statistics")
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 		("print-speciesstack-file", boost::program_options::value<string>(), 	"print graph of species size to a file")
+		("print-speciessize-file", 	boost::program_options::value<string>(), 	"print CSV-formatted sizes of species per generation")
 		("print-fitness-file", 		boost::program_options::value<string>(), 	"print best fitness to a file")
 		("print-super-champions", 											 	"print every super champion to a file")
 	    ("debug", 					boost::program_options::value<uint16_t>(),	"enable debug mode")
@@ -151,6 +153,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("print-population"))			m_printPopulation 		= true;
 	if (varMap.count("print-population-file"))		m_printPopulationFile 	= varMap["print-population-file"].as<string>();
 	if (varMap.count("print-speciesstack-file"))	m_printSpeciesStackFile = varMap["print-speciesstack-file"].as<string>();
+	if (varMap.count("print-speciessize-file"))		m_printSpeciesSizeFile 	= varMap["print-speciessize-file"].as<string>();
 	if (varMap.count("print-fitness-file"))			m_printFitnessFile 		= varMap["print-fitness-file"].as<string>();
 	if (varMap.count("print-super-champions"))		m_printSuperChampions 	= true;
 
@@ -331,13 +334,16 @@ int main(int argc, char *argv[])
 	 *** A5 Prepare output streams
 	 ***/
 
-	static ofstream ofPopSummary, ofSpeciesStack, ofFitness;
+	static ofstream ofPopSummary, ofSpeciesStack, ofSpeciesSize, ofFitness;
 
 	if(!m_printPopulationFile.empty()) 
 		ofPopSummary.open(m_printPopulationFile.c_str());
 
 	if(!m_printSpeciesStackFile.empty())
 		ofSpeciesStack.open(m_printSpeciesStackFile.c_str());
+	
+	if(!m_printSpeciesSizeFile.empty())
+		ofSpeciesSize.open(m_printSpeciesSizeFile.c_str());
 
 	if(!m_printFitnessFile.empty())
 		ofFitness.open(m_printFitnessFile.c_str());
@@ -773,6 +779,10 @@ int main(int argc, char *argv[])
 		if(!m_printSpeciesStackFile.empty())
 			{ population->PrintVerticalSpeciesStack(ofSpeciesStack); ofSpeciesStack.flush(); }
 
+		if(!m_printSpeciesSizeFile.empty())
+			{ population->PrintSpeciesSize(ofSpeciesSize); ofSpeciesSize.flush(); }		
+
+
 		if(!m_printFitnessFile.empty())
 		{
 			if(!m_testdata.empty())
@@ -797,7 +807,7 @@ int main(int argc, char *argv[])
 				<< "_gen" << setfill('0') << setw(6) << g_generationNumber 
 				<< "_species" << setfill('0') << setw(3) << population->bestSpecies->id 
 				<< ".csv";
-			const string& filenameCSV = ssfilenameGV.str();
+			const string& filenameCSV = ssfilenameCSV.str();
 			population->superChampion->SaveToFile(filenameCSV.c_str());
 		}
 

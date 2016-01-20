@@ -9,12 +9,11 @@ v Load genome from file
 -  evaluate DBs on it
 v  use as starting point
 
-v Add a mutation that deletes a hidden node and all links going to it (delete or disable?)
-- Print evolution of species size, numerically (for plotting) (gen,spec1size,spec2size,etc)
-
-
 - Wipe the genome's memory on new nodeID incoming
-- Print the champion on every 'N' generations (or whenever there is a change)
+
+v Add a mutation that deletes a hidden node and all links going to it (delete or disable?)
+v Print evolution of species size, numerically (for plotting) (gen,spec1size,spec2size,etc)
+v Print the champion on every 'N' generations (or whenever there is a change)
 
 
 

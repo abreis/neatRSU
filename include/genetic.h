@@ -252,6 +252,9 @@ public:
 	// Prints a vertical stacked graph of the % size each species occupies. 
 	void PrintVerticalSpeciesStack(ostream& outstream);
 
+	// Prints a comma-delimited entry with the size of all species.
+	void PrintSpeciesSize(ostream& outstream);
+
 	// Prints a (generation,bestFitness) pair.
 	void PrintFitness(ostream& outstream, vector<DataEntry>* database1, vector<DataEntry>* database2=0);
 };
