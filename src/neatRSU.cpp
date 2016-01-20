@@ -1,3 +1,6 @@
+/* Andre Braga Reis, 2016
+ */
+
 #include "neatRSU.h"
 #include "genetic.h"
 

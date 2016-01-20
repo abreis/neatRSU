@@ -1,3 +1,6 @@
+/* Andre Braga Reis, 2016
+ */
+
 #ifndef NEATRSU_H_
 #define NEATRSU_H_
 

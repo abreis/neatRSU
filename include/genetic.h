@@ -1,3 +1,6 @@
+/* Andre Braga Reis, 2016
+ */
+
 #ifndef GENETIC_H_
 #define GENETIC_H_
 

@@ -1,4 +1,7 @@
-#include "genetic.h"
+/* Andre Braga Reis, 2016
+ */
+
+ #include "genetic.h"
 
 uint16_t g_innovations = 0;
 map<pair<uint16_t,uint16_t>,uint16_t> g_innovationList; 
