@@ -375,7 +375,7 @@ double Genome::GetFitness(vector<DataEntry>* database, bool store)
 
 	if( isinf(rfitness) )
 		return 0;
-	return 1.0/rfitness;
+	return 1.0/(rfitness+1.0);
 }
 
 
