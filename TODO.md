@@ -14,7 +14,7 @@ v  use as starting point
 
 
 - Wipe the genome's memory on new nodeID incoming
-- Print the champion on every 'N' generations
+- Print the champion on every 'N' generations (or whenever there is a change)
 
 
 

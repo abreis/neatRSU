@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
 	string 		m_printPopulationFile 	= "";
 	string 		m_printSpeciesStackFile = "";
 	string 		m_printFitnessFile		= "";
+	bool		m_printSuperChampions	= false;
 	float		m_weightPerturbStdev	= FLT_MAX;
 	uint32_t	m_killStagnated			= 0;
 	uint32_t	m_refocusStagnated		= 0;
@@ -114,6 +115,7 @@ int main(int argc, char *argv[])
 		("print-population-file", 	boost::program_options::value<string>(), 	"print population statistics to a file")
 		("print-speciesstack-file", boost::program_options::value<string>(), 	"print graph of species size to a file")
 		("print-fitness-file", 		boost::program_options::value<string>(), 	"print best fitness to a file")
+		("print-super-champions", 											 	"print every super champion to a file")
 	    ("debug", 					boost::program_options::value<uint16_t>(),	"enable debug mode")
 	    ("help", 																"give this help list")
 	;
@@ -148,6 +150,7 @@ int main(int argc, char *argv[])
 	if (varMap.count("print-population-file"))		m_printPopulationFile 	= varMap["print-population-file"].as<string>();
 	if (varMap.count("print-speciesstack-file"))	m_printSpeciesStackFile = varMap["print-speciesstack-file"].as<string>();
 	if (varMap.count("print-fitness-file"))			m_printFitnessFile 		= varMap["print-fitness-file"].as<string>();
+	if (varMap.count("print-super-champions"))		m_printSuperChampions 	= true;
 
 	if (varMap.count("help")) 					{ cout << cliOptDesc; return 1; }
 
@@ -370,6 +373,11 @@ int main(int argc, char *argv[])
 	/***
 	 *** C0 Loop evolution until criteria match
 	 ***/
+
+	// For tracking super champion evolution.
+	double lastBestFitness = 0;
+
+	// // For the self-adjusting compatibility threshold.
 	bool f_reachedTargetSpecies = false;
 
 	// Threads setup
@@ -766,9 +774,15 @@ int main(int argc, char *argv[])
 		if(!m_printFitnessFile.empty())
 			{ population->PrintFitness(ofFitness); ofFitness.flush(); }
 
-
-
-	if(cin.eof()) break;
+		// Every generation, if the superchampion changed, print it
+		if( m_printSuperChampions and (population->bestFitness != lastBestFitness) )
+		{
+			lastBestFitness = population->bestFitness;
+			stringstream ssfilename;
+			ssfilename << "superChampion_gen" << setfill('0') << setw(6) << g_generationNumber << ".gv";
+			const string& filename = ssfilename.str();
+			population->superChampion->PrintToGV(filename.c_str());
+		}
 
 	// Generation loop control
 	g_generationNumber++; 
