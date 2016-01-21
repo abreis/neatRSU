@@ -678,7 +678,11 @@ int main(int argc, char *argv[])
 			iterSpecies = sumAdjFitness.begin();
 			iterSpecies != sumAdjFitness.end();
 			iterSpecies++)
-			iterSpecies->first->Reproduce( sumAdjFitness[iterSpecies->first]/totalAdjFitness*m_maxPop );
+		{
+			uint16_t speciesTargetPop = sumAdjFitness[iterSpecies->first]/totalAdjFitness*m_maxPop;
+			if(speciesTargetPop < 2) speciesTargetPop = 2;
+			iterSpecies->first->Reproduce( speciesTargetPop );
+		}
 
 
 

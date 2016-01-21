@@ -752,7 +752,9 @@ void Species::Reproduce(uint16_t targetSpeciesSize)
 		targetSpeciesSizeAdj = fmin(targetSpeciesSize-1, 2*genomes.size()+1);
 	else
 		// Immediately grow to target size
-		targetSpeciesSizeAdj = targetSpeciesSize-1;
+		targetSpeciesSizeAdj = targetSpeciesSize;
+
+	assert(targetSpeciesSizeAdj>1);
 
 	// Vector to hold the new genomes
 	list<Genome> offsprings;
